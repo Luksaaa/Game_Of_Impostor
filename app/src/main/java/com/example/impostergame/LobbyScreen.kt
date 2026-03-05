@@ -2,6 +2,7 @@ package com.example.impostergame
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,7 +62,6 @@ fun LobbyScreen(
     val containerColor = if (isDarkTheme) DarkInputGray else Color.White
 
     val clipboardManager = LocalClipboardManager.current
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     val deepLinkUrl = "impostergame://join?code=$roomCode"
@@ -93,7 +93,6 @@ fun LobbyScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color.Transparent
     ) { paddingValues ->
         AnimatedBackground {
@@ -112,11 +111,11 @@ fun LobbyScreen(
                 ) {
                     Column(
                         modifier = Modifier
-                            .clickable {
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
                                 clipboardManager.setText(AnnotatedString(roomCode))
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Kod kopiran: $roomCode")
-                                }
                             },
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -138,11 +137,11 @@ fun LobbyScreen(
                     Surface(
                         modifier = Modifier
                             .size(80.dp)
-                            .clickable {
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
                                 clipboardManager.setText(AnnotatedString(roomCode))
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Kod kopiran: $roomCode")
-                                }
                             },
                         color = Color.White,
                         shape = RoundedCornerShape(8.dp),
@@ -241,20 +240,20 @@ fun LobbyScreen(
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                         contentPadding = PaddingValues(),
-                        enabled = playerCount >= 3
+                        enabled = playerCount >= 2
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .background(
-                                    brush = if (playerCount >= 3) Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient))
+                                    brush = if (playerCount >= 2) Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient))
                                             else Brush.horizontalGradient(listOf(Color.Gray, Color.Gray)),
                                     shape = RoundedCornerShape(20.dp)
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (playerCount < 3) "MIN 3 IGRAČA" else "POKRENI IGRU",
+                                text = if (playerCount < 2) "MIN 2 IGRAČA" else "POKRENI IGRU",
                                 color = Color.White,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold

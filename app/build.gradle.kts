@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.google.services)
+
 }
 
 android {
@@ -31,9 +31,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+
     buildFeatures {
         compose = true
     }
@@ -50,8 +48,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     
     // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.database)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -4,10 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.example.impostergame.ui.theme.ImposterGameTheme
 import com.google.firebase.FirebaseApp
@@ -50,12 +50,13 @@ class MainActivity : ComponentActivity() {
 fun ImposterApp(initialUsername: String, qrRoomCode: String, onNameSaved: (String, Boolean) -> Unit) {
     var username by remember { mutableStateOf(initialUsername) }
     var roomCode by remember { mutableStateOf(qrRoomCode) }
+    
     var currentScreen by remember { 
         mutableStateOf(if (username.isBlank()) Screen.ENTER_NAME else if (qrRoomCode.isNotBlank()) Screen.LOBBY else Screen.HOME) 
     }
     var isAdmin by remember { mutableStateOf(false) }
     
-    val database = Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms")
+    val database = remember { Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms") }
 
     // Automatsko spajanje ako postoji QR kod i username
     LaunchedEffect(qrRoomCode) {
@@ -121,6 +122,7 @@ fun ImposterApp(initialUsername: String, qrRoomCode: String, onNameSaved: (Strin
             },
             onNewGame = {
                 currentScreen = Screen.HOME
+                roomCode = ""
             }
         )
     }
@@ -134,9 +136,9 @@ private fun joinRoomLogic(
 ) {
     database.child(code).get().addOnSuccessListener { snapshot ->
         if (snapshot.exists()) {
-            val players = snapshot.child("players")
-            if (players.childrenCount < 8) {
-                database.child(code).child("players").child(username).setValue(true).addOnSuccessListener {
+            val playersSnapshot = snapshot.child("players")
+            if (playersSnapshot.childrenCount < 8) {
+                database.child(code).child("players").child(username).setValue(mapOf("name" to username, "isReady" to false)).addOnSuccessListener {
                     database.child(code).child("messages").push().setValue("$username je ušao")
                     onSuccess()
                 }

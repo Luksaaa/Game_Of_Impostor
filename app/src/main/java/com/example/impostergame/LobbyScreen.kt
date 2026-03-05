@@ -36,7 +36,17 @@ fun LobbyScreen(
     onLeaveRoom: () -> Unit,
     onGameStarted: () -> Unit
 ) {
-    val database = Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms").child(roomCode)
+    if (roomCode.isBlank()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = BlueGradient)
+        }
+        return
+    }
+
+    val database = remember(roomCode) { 
+        Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/")
+            .getReference("rooms").child(roomCode) 
+    }
     
     var messages by remember { mutableStateOf(listOf<String>()) }
     var playerCount by remember { mutableStateOf(0) }
@@ -50,11 +60,10 @@ fun LobbyScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Deep link URL for the QR code
     val deepLinkUrl = "impostergame://join?code=$roomCode"
 
-    LaunchedEffect(roomCode) {
-        database.addValueEventListener(object : ValueEventListener {
+    DisposableEffect(roomCode) {
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
                 status = snapshot.child("status").getValue(String::class.java) ?: "waiting"
@@ -68,7 +77,13 @@ fun LobbyScreen(
                 playerCount = snapshot.child("players").childrenCount.toInt()
             }
             override fun onCancelled(error: DatabaseError) {}
-        })
+        }
+        
+        database.addValueEventListener(listener)
+        
+        onDispose {
+            database.removeEventListener(listener)
+        }
     }
 
     Scaffold(
@@ -114,10 +129,9 @@ fun LobbyScreen(
                     
                     Spacer(modifier = Modifier.width(16.dp))
                     
-                    // QR Code next to the room code
                     Surface(
                         modifier = Modifier
-                            .size(80.dp) // Povećan QR kod sa 60 na 80
+                            .size(80.dp)
                             .clickable {
                                 clipboardManager.setText(AnnotatedString(roomCode))
                                 scope.launch {
@@ -184,10 +198,8 @@ fun LobbyScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Gumb IZAĐI
                 OutlinedButton(
                     onClick = {
-                        // Logika za izlazak iz sobe u Firebaseu
                         database.child("players").child(username).removeValue()
                         database.child("messages").push().setValue("$username je izašao")
                         onLeaveRoom()
@@ -225,15 +237,24 @@ fun LobbyScreen(
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                         contentPadding = PaddingValues(),
-                        enabled = playerCount >= 1
+                        enabled = playerCount >= 3
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient)), RoundedCornerShape(20.dp)),
+                                .background(
+                                    brush = if (playerCount >= 3) Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient))
+                                            else Brush.horizontalGradient(listOf(Color.Gray, Color.Gray)),
+                                    shape = RoundedCornerShape(20.dp)
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("POKRENI IGRU", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = if (playerCount < 3) "MIN 3 IGRAČA" else "POKRENI IGRU",
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 } else {

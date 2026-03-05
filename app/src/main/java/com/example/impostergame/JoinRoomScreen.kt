@@ -114,7 +114,8 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
                                             val players = snapshot.child("players")
                                             if (players.childrenCount < 8) {
                                                 val playerRef = database.child(inputCode).child("players").child(username)
-                                                playerRef.setValue(true).addOnSuccessListener {
+                                                // Dosljedan format podataka o igraču
+                                                playerRef.setValue(mapOf("name" to username, "isReady" to false)).addOnSuccessListener {
                                                     val msgRef = database.child(inputCode).child("messages").push()
                                                     msgRef.setValue("$username je ušao")
                                                     onJoined(inputCode)

@@ -25,7 +25,7 @@ object FirebaseManager {
                 val roomData: Map<String, Any> = mapOf(
                     "admin" to username,
                     "status" to "waiting",
-                    "players" to mapOf(username to true),
+                    "players" to mapOf(username to mapOf("name" to username, "isReady" to false)),
                     "messages" to mapOf(roomsRef.push().key!! to "$username je napravio sobu")
                 )
                 roomsRef.child(code).setValue(roomData).addOnSuccessListener {

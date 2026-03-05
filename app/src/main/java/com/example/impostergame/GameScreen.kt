@@ -38,7 +38,12 @@ fun GameScreen(
     onRepeat: () -> Unit,
     onNewGame: () -> Unit
 ) {
-    val database = Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms").child(roomCode)
+    if (roomCode.isBlank()) return
+
+    val database = remember(roomCode) { 
+        Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/")
+            .getReference("rooms").child(roomCode) 
+    }
     
     var word by remember { mutableStateOf("") }
     var isRevealed by remember { mutableStateOf(false) }
@@ -49,11 +54,14 @@ fun GameScreen(
     val textColor = if (isDarkTheme) Color.White else Color.Black
     val containerColor = if (isDarkTheme) DarkInputGray else Color.White
 
-    LaunchedEffect(Unit) {
-        database.addValueEventListener(object : ValueEventListener {
+    // Koristimo DisposableEffect kako bi ispravno uklonili slušača kada korisnik izađe
+    DisposableEffect(roomCode) {
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
                 val status = snapshot.child("status").getValue(String::class.java)
+                
+                // Samo ako je status "waiting", vraćamo se u lobby
                 if (status == "waiting") {
                     onRepeat()
                 }
@@ -66,7 +74,13 @@ fun GameScreen(
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
-        })
+        }
+        
+        database.addValueEventListener(listener)
+        
+        onDispose {
+            database.removeEventListener(listener)
+        }
     }
 
     AnimatedBackground {
@@ -78,7 +92,6 @@ fun GameScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Prazan prostor na vrhu umjesto uloge
             Spacer(modifier = Modifier.height(60.dp))
 
             Card(
@@ -144,14 +157,24 @@ fun GameScreen(
             }
 
             Column(modifier = Modifier.fillMaxWidth()) {
-                if (showAdminOnlyMessage) {
-                    Text(
-                        text = "Samo admin može ponoviti igru",
-                        color = Color.Red,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                        fontWeight = FontWeight.Bold
-                    )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = showAdminOnlyMessage,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        Text(
+                            text = "Samo admin može ponoviti igru",
+                            color = Color.Red,
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
                 Button(
@@ -159,10 +182,12 @@ fun GameScreen(
                         if (isAdmin) {
                             database.child("status").setValue("waiting")
                         } else {
-                            showAdminOnlyMessage = true
-                            scope.launch {
-                                delay(3000)
-                                showAdminOnlyMessage = false
+                            if (!showAdminOnlyMessage) {
+                                showAdminOnlyMessage = true
+                                scope.launch {
+                                    delay(3000)
+                                    showAdminOnlyMessage = false
+                                }
                             }
                         }
                     },
@@ -180,12 +205,17 @@ fun GameScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = onNewGame,
+                    onClick = {
+                        // Čist izlazak: brišemo listener i podatke
+                        database.child("players").child(username).removeValue()
+                        database.child("messages").push().setValue("$username je izašao")
+                        onNewGame()
+                    },
                     modifier = Modifier.fillMaxWidth().height(60.dp),
                     shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f))
                 ) {
-                    Text("NOVA IGRA", color = textColor, fontWeight = FontWeight.Bold)
+                    Text("IZAĐI IZ SOBE", color = textColor, fontWeight = FontWeight.Bold)
                 }
             }
         }

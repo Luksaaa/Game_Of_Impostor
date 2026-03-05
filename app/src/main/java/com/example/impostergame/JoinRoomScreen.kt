@@ -1,11 +1,8 @@
 package com.example.impostergame
 
-import android.Manifest
-import android.content.pm.PackageManager
+import android.content.Intent
+import android.provider.MediaStore
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -24,7 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import com.example.impostergame.ui.components.AnimatedBackground
 import com.example.impostergame.ui.theme.*
 import com.google.firebase.database.ktx.database
@@ -40,26 +36,6 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
     
     val context = LocalContext.current
     val database = Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms")
-
-    // Camera launcher to actually open the camera
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        if (bitmap != null) {
-            Toast.makeText(context, "Kamera je bila otvorena!", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    // Permission launcher
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            cameraLauncher.launch()
-        } else {
-            Toast.makeText(context, "Dopuštenje za kameru je odbijeno", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     AnimatedBackground {
         Column(
@@ -181,16 +157,14 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Gumb s ikonom kamere - sada zapravo otvara kameru
+                        // Gumb s ikonom kamere - Otvara sistemsku kameru neovisno
                         IconButton(
-                            onClick = { 
-                                when (PackageManager.PERMISSION_GRANTED) {
-                                    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) -> {
-                                        cameraLauncher.launch()
-                                    }
-                                    else -> {
-                                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                                    }
+                            onClick = {
+                                try {
+                                    val intent = Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Ne mogu otvoriti kameru", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             modifier = Modifier

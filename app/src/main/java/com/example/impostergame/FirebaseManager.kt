@@ -42,4 +42,41 @@ object FirebaseManager {
         val randomNumbers = (1..3).map { numbers.random() }.joinToString("")
         return randomLetters + randomNumbers
     }
+
+    fun leaveRoomWithAdminTransfer(roomCode: String, username: String, onComplete: () -> Unit) {
+        val roomRef = roomsRef.child(roomCode)
+        roomRef.get().addOnSuccessListener { snapshot ->
+            if (!snapshot.exists()) {
+                onComplete()
+                return@addOnSuccessListener
+            }
+            
+            val currentAdmin = snapshot.child("admin").getValue(String::class.java)
+            val players = snapshot.child("players").children.toList()
+            
+            if (currentAdmin == username) {
+                // Admin izlazi, pronađi novog admina (prvi sljedeći na listi)
+                val nextAdmin = players.firstOrNull { it.key != username }?.key
+                
+                if (nextAdmin != null) {
+                    val updates = mutableMapOf<String, Any?>()
+                    updates["admin"] = nextAdmin
+                    updates["players/$username"] = null
+                    updates["messages/${roomRef.push().key}"] = "$username je izašao, novi admin je $nextAdmin"
+                    
+                    roomRef.updateChildren(updates).addOnCompleteListener { onComplete() }
+                } else {
+                    // Nema nikoga više, obriši sobu
+                    roomRef.removeValue().addOnCompleteListener { onComplete() }
+                }
+            } else {
+                // Nije admin, samo izađi
+                roomRef.child("players").child(username).removeValue()
+                roomRef.child("messages").push().setValue("$username je izašao")
+                onComplete()
+            }
+        }.addOnFailureListener {
+            onComplete()
+        }
+    }
 }

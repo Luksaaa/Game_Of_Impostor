@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.*
@@ -65,6 +66,34 @@ fun ImposterApp(initialUsername: String, qrRoomCode: String, onNameSaved: (Strin
                 currentScreen = Screen.LOBBY
             }
         }
+    }
+
+    // Rukovanje Back gumbom ovisno o ekranu
+    when (currentScreen) {
+        Screen.JOIN -> {
+            BackHandler {
+                currentScreen = Screen.HOME
+            }
+        }
+        Screen.LOBBY -> {
+            BackHandler {
+                // Logika za izlazak iz sobe
+                database.child(roomCode).child("players").child(username).removeValue()
+                database.child(roomCode).child("messages").push().setValue("$username je izašao")
+                currentScreen = Screen.HOME
+                roomCode = ""
+            }
+        }
+        Screen.GAME -> {
+            BackHandler {
+                // Logika za izlazak iz sobe tijekom igre
+                database.child(roomCode).child("players").child(username).removeValue()
+                database.child(roomCode).child("messages").push().setValue("$username je izašao")
+                currentScreen = Screen.HOME
+                roomCode = ""
+            }
+        }
+        else -> { /* Na HOME i ENTER_NAME dozvoli standardni Back (izlaz iz aplikacije) */ }
     }
 
     when (currentScreen) {

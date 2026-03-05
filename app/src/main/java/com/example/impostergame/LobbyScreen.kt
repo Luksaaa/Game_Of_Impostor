@@ -23,6 +23,7 @@ import com.example.impostergame.ui.components.QRCodeImage
 import com.example.impostergame.ui.theme.*
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -32,7 +33,7 @@ import kotlinx.coroutines.launch
 fun LobbyScreen(
     roomCode: String, 
     username: String, 
-    isAdmin: Boolean, 
+    isAdmin: Boolean, // Ostaje zbog kompatibilnosti, ali koristimo isUserAdmin iz baze
     onLeaveRoom: () -> Unit,
     onGameStarted: () -> Unit
 ) {
@@ -51,6 +52,9 @@ fun LobbyScreen(
     var messages by remember { mutableStateOf(listOf<String>()) }
     var playerCount by remember { mutableStateOf(0) }
     var status by remember { mutableStateOf("waiting") }
+    var currentAdmin by remember { mutableStateOf("") }
+    
+    val isUserAdmin = currentAdmin == username
     
     val isDarkTheme = isSystemInDarkTheme()
     val textColor = if (isDarkTheme) Color.White else Color.Black
@@ -67,6 +71,8 @@ fun LobbyScreen(
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
                 status = snapshot.child("status").getValue(String::class.java) ?: "waiting"
+                currentAdmin = snapshot.child("admin").getValue(String::class.java) ?: ""
+                
                 if (status == "started") onGameStarted()
 
                 val msgList = mutableListOf<String>()
@@ -151,8 +157,8 @@ fun LobbyScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = if (isAdmin) "Ti si ADMIN" else "Čekanje admina...", 
-                    color = if (isAdmin) Gold else textColor.copy(alpha = 0.5f),
+                    text = if (isUserAdmin) "Ti si ADMIN" else "Admin je: $currentAdmin", 
+                    color = if (isUserAdmin) Gold else textColor.copy(alpha = 0.5f),
                     fontWeight = FontWeight.Medium
                 )
                 
@@ -200,9 +206,7 @@ fun LobbyScreen(
 
                 OutlinedButton(
                     onClick = {
-                        database.child("players").child(username).removeValue()
-                        database.child("messages").push().setValue("$username je izašao")
-                        onLeaveRoom()
+                        leaveRoomWithAdminTransfer(database, username, onLeaveRoom)
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(20.dp),
@@ -214,7 +218,7 @@ fun LobbyScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                if (isAdmin) {
+                if (isUserAdmin) {
                     Button(
                         onClick = {
                             val mainWord = croatianWords.random()
@@ -275,5 +279,41 @@ fun LobbyScreen(
                 }
             }
         }
+    }
+}
+
+fun leaveRoomWithAdminTransfer(roomRef: DatabaseReference, username: String, onComplete: () -> Unit) {
+    roomRef.get().addOnSuccessListener { snapshot ->
+        if (!snapshot.exists()) {
+            onComplete()
+            return@addOnSuccessListener
+        }
+        
+        val currentAdmin = snapshot.child("admin").getValue(String::class.java)
+        val players = snapshot.child("players").children.toList()
+        
+        if (currentAdmin == username) {
+            // Admin izlazi, pronađi novog admina (prvi sljedeći na listi)
+            val nextAdmin = players.firstOrNull { it.key != username }?.key
+            
+            if (nextAdmin != null) {
+                val updates = mutableMapOf<String, Any?>()
+                updates["admin"] = nextAdmin
+                updates["players/$username"] = null
+                updates["messages/${roomRef.push().key}"] = "$username je izašao, novi admin je $nextAdmin"
+                
+                roomRef.updateChildren(updates).addOnCompleteListener { onComplete() }
+            } else {
+                // Nema nikoga više, obriši sobu
+                roomRef.removeValue().addOnCompleteListener { onComplete() }
+            }
+        } else {
+            // Nije admin, samo izađi
+            roomRef.child("players").child(username).removeValue()
+            roomRef.child("messages").push().setValue("$username je izašao")
+            onComplete()
+        }
+    }.addOnFailureListener {
+        onComplete()
     }
 }

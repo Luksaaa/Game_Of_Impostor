@@ -48,20 +48,22 @@ fun GameScreen(
     var word by remember { mutableStateOf("") }
     var isRevealed by remember { mutableStateOf(false) }
     var showAdminOnlyMessage by remember { mutableStateOf(false) }
+    var currentAdmin by remember { mutableStateOf("") }
+    
+    val isUserAdmin = currentAdmin == username
     val scope = rememberCoroutineScope()
 
     val isDarkTheme = isSystemInDarkTheme()
     val textColor = if (isDarkTheme) Color.White else Color.Black
     val containerColor = if (isDarkTheme) DarkInputGray else Color.White
 
-    // Koristimo DisposableEffect kako bi ispravno uklonili slušača kada korisnik izađe
     DisposableEffect(roomCode) {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
                 val status = snapshot.child("status").getValue(String::class.java)
+                currentAdmin = snapshot.child("admin").getValue(String::class.java) ?: ""
                 
-                // Samo ako je status "waiting", vraćamo se u lobby
                 if (status == "waiting") {
                     onRepeat()
                 }
@@ -179,7 +181,7 @@ fun GameScreen(
 
                 Button(
                     onClick = {
-                        if (isAdmin) {
+                        if (isUserAdmin) {
                             database.child("status").setValue("waiting")
                         } else {
                             if (!showAdminOnlyMessage) {
@@ -195,7 +197,7 @@ fun GameScreen(
                     shape = RoundedCornerShape(20.dp),
                     enabled = true,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isAdmin) PurpleGradient else PurpleGradient.copy(alpha = 0.3f),
+                        containerColor = if (isUserAdmin) PurpleGradient else PurpleGradient.copy(alpha = 0.3f),
                         contentColor = Color.White
                     )
                 ) {
@@ -206,10 +208,7 @@ fun GameScreen(
 
                 Button(
                     onClick = {
-                        // Čist izlazak: brišemo listener i podatke
-                        database.child("players").child(username).removeValue()
-                        database.child("messages").push().setValue("$username je izašao")
-                        onNewGame()
+                        FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onNewGame)
                     },
                     modifier = Modifier.fillMaxWidth().height(60.dp),
                     shape = RoundedCornerShape(20.dp),

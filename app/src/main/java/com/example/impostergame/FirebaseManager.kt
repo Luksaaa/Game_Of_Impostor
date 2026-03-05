@@ -5,19 +5,29 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 
 object FirebaseManager {
-    private val database = Firebase.database("https://your-project-id.firebaseio.com/") // REPLACE WITH YOUR URL if needed, or use default
+    private const val DATABASE_URL = "https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/"
+    
+    private val database = Firebase.database(DATABASE_URL)
     val roomsRef = database.getReference("rooms")
 
     fun generateRoom(username: String, onComplete: (String) -> Unit) {
         val code = generateRandomCode()
-        val roomData = mapOf(
-            "admin" to username,
-            "status" to "waiting",
-            "players" to mapOf(username to true),
-            "messages" to listOf("$username je napravio sobu")
-        )
-        roomsRef.child(code).setValue(roomData).addOnSuccessListener {
-            onComplete(code)
+        
+        // Provjera postoji li kod (iako je mala šansa za duplikat)
+        roomsRef.child(code).get().addOnSuccessListener { snapshot ->
+            if (snapshot.exists()) {
+                generateRoom(username, onComplete) // Ponovi ako postoji
+            } else {
+                val roomData = mapOf(
+                    "admin" to username,
+                    "status" to "waiting",
+                    "players" to mapOf(username to true),
+                    "messages" to mapOf(roomsRef.push().key!! to "$username je napravio sobu")
+                )
+                roomsRef.child(code).setValue(roomData).addOnSuccessListener {
+                    onComplete(code)
+                }
+            }
         }
     }
 

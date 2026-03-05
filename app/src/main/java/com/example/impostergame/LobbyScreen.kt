@@ -20,7 +20,9 @@ import kotlin.random.Random
 
 @Composable
 fun LobbyScreen(roomCode: String, username: String, isAdmin: Boolean, onGameStarted: () -> Unit) {
-    val database = Firebase.database.getReference("rooms").child(roomCode)
+    // Postavljanje URL-a baze direktno
+    val database = Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms").child(roomCode)
+    
     var messages by remember { mutableStateOf(listOf<String>()) }
     var playerCount by remember { mutableStateOf(0) }
     var status by remember { mutableStateOf("waiting") }
@@ -62,7 +64,7 @@ fun LobbyScreen(roomCode: String, username: String, isAdmin: Boolean, onGameStar
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        Text("Obavijesti:", fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
+        Text("Događaji u sobi:", fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth()
         ) {
@@ -79,25 +81,27 @@ fun LobbyScreen(roomCode: String, username: String, isAdmin: Boolean, onGameStar
                     
                     database.get().addOnSuccessListener { snapshot ->
                         val players = snapshot.child("players").children.map { it.key!! }
-                        val imposter = players.random()
-                        
-                        val updates = mapOf(
-                            "mainWord" to mainWord,
-                            "imposterWord" to imposterWord,
-                            "imposterId" to imposter,
-                            "status" to "started"
-                        )
-                        database.updateChildren(updates)
+                        if (players.isNotEmpty()) {
+                            val imposter = players.random()
+                            
+                            val updates = mapOf(
+                                "mainWord" to mainWord,
+                                "imposterWord" to imposterWord,
+                                "imposterId" to imposter,
+                                "status" to "started"
+                            )
+                            database.updateChildren(updates)
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(60.dp),
-                enabled = playerCount >= 1 // Možeš staviti 3 za pravu igru
+                enabled = playerCount >= 1
             ) {
                 Text("KRENI", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
         } else {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp))
-            Text("Igra će početi čim admin stisne gumb...")
+            Text("Čekamo da admin pokrene igru...")
         }
     }
 }

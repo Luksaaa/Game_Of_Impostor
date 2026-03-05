@@ -17,7 +17,9 @@ import com.google.firebase.ktx.Firebase
 fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> Unit) {
     var inputCode by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
-    val database = Firebase.database.getReference("rooms")
+    
+    // Explicitly using the provided database URL
+    val database = Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms")
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -52,10 +54,10 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
                         if (snapshot.exists()) {
                             val players = snapshot.child("players")
                             if (players.childrenCount < 8) {
-                                // Add player to room
+                                // Dodavanje igrača u sobu
                                 val playerRef = database.child(inputCode).child("players").child(username)
                                 playerRef.setValue(true).addOnSuccessListener {
-                                    // Add "X je ušao" message
+                                    // Slanje poruke "X je ušao"
                                     val msgRef = database.child(inputCode).child("messages").push()
                                     msgRef.setValue("$username je ušao")
                                     onJoined(inputCode)
@@ -67,8 +69,10 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
                             errorMessage = "Soba ne postoji"
                         }
                     }.addOnFailureListener {
-                        errorMessage = "Pogreška pri spajanju"
+                        errorMessage = "Pogreška pri spajanju: ${it.message}"
                     }
+                } else {
+                    errorMessage = "Kod mora imati 6 znakova"
                 }
             },
             modifier = Modifier.fillMaxWidth().height(56.dp)

@@ -1,5 +1,11 @@
 package com.example.impostergame
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -13,10 +19,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.example.impostergame.ui.components.AnimatedBackground
 import com.example.impostergame.ui.theme.*
 import com.google.firebase.database.ktx.database
@@ -30,7 +38,28 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
     val textColor = if (isDarkTheme) Color.White else Color.Black
     val inputContainerColor = if (isDarkTheme) DarkInputGray else Color.White
     
+    val context = LocalContext.current
     val database = Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms")
+
+    // Camera launcher to actually open the camera
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            Toast.makeText(context, "Kamera je bila otvorena!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Permission launcher
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            cameraLauncher.launch()
+        } else {
+            Toast.makeText(context, "Dopuštenje za kameru je odbijeno", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     AnimatedBackground {
         Column(
@@ -112,9 +141,8 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
                                     database.child(inputCode).get().addOnSuccessListener { snapshot ->
                                         if (snapshot.exists()) {
                                             val players = snapshot.child("players")
-                                            if (players.childrenCount < 8) {
+                                            if (players.children.count() < 8) {
                                                 val playerRef = database.child(inputCode).child("players").child(username)
-                                                // Dosljedan format podataka o igraču
                                                 playerRef.setValue(mapOf("name" to username, "isReady" to false)).addOnSuccessListener {
                                                     val msgRef = database.child(inputCode).child("messages").push()
                                                     msgRef.setValue("$username je ušao")
@@ -153,9 +181,18 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Gumb s ikonom kamere
+                        // Gumb s ikonom kamere - sada zapravo otvara kameru
                         IconButton(
-                            onClick = { /* Ovdje će ići logika za skeniranje */ },
+                            onClick = { 
+                                when (PackageManager.PERMISSION_GRANTED) {
+                                    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) -> {
+                                        cameraLauncher.launch()
+                                    }
+                                    else -> {
+                                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                                    }
+                                }
+                            },
                             modifier = Modifier
                                 .size(64.dp)
                                 .background(textColor.copy(alpha = 0.05f), RoundedCornerShape(16.dp))

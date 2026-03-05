@@ -8,6 +8,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +27,8 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun GameScreen(
@@ -38,6 +42,8 @@ fun GameScreen(
     
     var word by remember { mutableStateOf("") }
     var isRevealed by remember { mutableStateOf(false) }
+    var showAdminOnlyMessage by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val isDarkTheme = isSystemInDarkTheme()
     val textColor = if (isDarkTheme) Color.White else Color.Black
@@ -97,36 +103,40 @@ fun GameScreen(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "Tvoja tajna riječ:", 
-                                fontSize = 18.sp, 
-                                color = textColor.copy(alpha = 0.6f)
+                                text = "Tvoja tajna riječ:",
+                                color = textColor.copy(alpha = 0.7f),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium
                             )
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = word,
-                                fontSize = 42.sp,
+                                color = textColor,
+                                fontSize = 48.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = BlueGradient,
-                                modifier = Modifier.padding(top = 16.dp),
                                 textAlign = TextAlign.Center
                             )
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Text("(Klikni za sakrivanje)", fontSize = 12.sp, color = textColor.copy(alpha = 0.3f))
                         }
                     } else {
-                        Button(
-                            onClick = { isRevealed = true },
+                        Column(
                             modifier = Modifier
-                                .width(220.dp)
-                                .height(100.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = BlueGradient)
+                                .fillMaxSize()
+                                .clickable { isRevealed = true },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
+                            Icon(
+                                imageVector = Icons.Default.Visibility,
+                                contentDescription = "Vidi",
+                                tint = PurpleGradient,
+                                modifier = Modifier.size(64.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "POGLEDAJ RIJEČ", 
-                                fontSize = 18.sp, 
-                                fontWeight = FontWeight.Bold, 
-                                color = Color.White,
-                                textAlign = TextAlign.Center
+                                text = "Dodirni za otkrivanje",
+                                color = textColor.copy(alpha = 0.5f),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
@@ -134,19 +144,34 @@ fun GameScreen(
             }
 
             Column(modifier = Modifier.fillMaxWidth()) {
+                if (showAdminOnlyMessage) {
+                    Text(
+                        text = "Samo admin može ponoviti igru",
+                        color = Color.Red,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
                 Button(
                     onClick = {
                         if (isAdmin) {
                             database.child("status").setValue("waiting")
+                        } else {
+                            showAdminOnlyMessage = true
+                            scope.launch {
+                                delay(3000)
+                                showAdminOnlyMessage = false
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(60.dp),
                     shape = RoundedCornerShape(20.dp),
-                    enabled = isAdmin,
+                    enabled = true,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = PurpleGradient,
-                        disabledContainerColor = PurpleGradient.copy(alpha = 0.3f),
-                        disabledContentColor = Color.White.copy(alpha = 0.5f)
+                        containerColor = if (isAdmin) PurpleGradient else PurpleGradient.copy(alpha = 0.3f),
+                        contentColor = Color.White
                     )
                 ) {
                     Text("PONOVI", color = Color.White, fontWeight = FontWeight.Bold)

@@ -6,12 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -40,7 +40,7 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
                 .statusBarsPadding()
         ) {
             IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = textColor)
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = textColor)
             }
 
             Column(
@@ -141,13 +141,30 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .background(
-                                        brush = Brush.horizontalGradient(listOf(PurpleGradient, BlueGradient)),
+                                        brush = androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(PurpleGradient, BlueGradient)),
                                         shape = RoundedCornerShape(16.dp)
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text("PRIDRUŽI SE", color = Color.White, fontWeight = FontWeight.Bold)
                             }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Gumb s ikonom kamere
+                        IconButton(
+                            onClick = { /* Ovdje će ići logika za skeniranje */ },
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(textColor.copy(alpha = 0.05f), RoundedCornerShape(16.dp))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Camera",
+                                tint = BlueGradient,
+                                modifier = Modifier.size(32.dp)
+                            )
                         }
                     }
                 }

@@ -38,7 +38,7 @@ android {
 }
 
 dependencies {
-    // Firebase BoM (Bill of Materials) - upravlja verzijama svih Firebase biblioteka
+    // Firebase BoM (Bill of Materials)
     implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-database-ktx")
@@ -52,8 +52,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-
-    // QR Code generation
+    implementation(libs.material.icons.extended)
+    
     implementation(libs.zxing.core)
 
     // Testiranje

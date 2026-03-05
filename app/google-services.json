@@ -1,22 +1,22 @@
 {
   "project_info": {
-    "project_number": "96950655117",
-    "firebase_url": "https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_number": "project_number",
+    "firebase_url": "firebase_url",
     "project_id": "gameofimpostor",
     "storage_bucket": "gameofimpostor.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:96950655117:android:c6832ad9ca1df6ef7a6ac4",
+        "mobilesdk_app_id": "mobilesdk_app_id",
         "android_client_info": {
-          "package_name": "com.example.impostergame"
+          "package_name": "package_name"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBHpzhb7LEyUGTbe042XEFmAzVdxKZxJgE"
+          "current_key": "current_key"
         }
       ],
       "services": {

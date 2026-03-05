@@ -37,7 +37,6 @@ fun GameScreen(
     val database = Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms").child(roomCode)
     
     var word by remember { mutableStateOf("") }
-    var role by remember { mutableStateOf("") }
     var isRevealed by remember { mutableStateOf(false) }
 
     val isDarkTheme = isSystemInDarkTheme()
@@ -45,7 +44,6 @@ fun GameScreen(
     val containerColor = if (isDarkTheme) DarkInputGray else Color.White
 
     LaunchedEffect(Unit) {
-        // Listener za promjenu statusa (ako admin klikne ponovi)
         database.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
@@ -55,12 +53,10 @@ fun GameScreen(
                 }
 
                 val imposterId = snapshot.child("imposterId").getValue(String::class.java)
-                if (imposterId == username) {
-                    role = "IMPOSTOR"
-                    word = snapshot.child("imposterWord").getValue(String::class.java) ?: ""
+                word = if (imposterId == username) {
+                    snapshot.child("imposterWord").getValue(String::class.java) ?: ""
                 } else {
-                    role = "CREWMATE"
-                    word = snapshot.child("mainWord").getValue(String::class.java) ?: ""
+                    snapshot.child("mainWord").getValue(String::class.java) ?: ""
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
@@ -76,30 +72,8 @@ fun GameScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // Skrivanje uloge kada je riječ otkrivena
-                AnimatedVisibility(
-                    visible = !isRevealed,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Surface(
-                            color = if (role == "IMPOSTOR") ImposterRed.copy(alpha = 0.1f) else CrewmateGreen.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            Text(
-                                text = role,
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = if (role == "IMPOSTOR") ImposterRed else CrewmateGreen
-                            )
-                        }
-                    }
-                }
-            }
+            // Prazan prostor na vrhu umjesto uloge
+            Spacer(modifier = Modifier.height(60.dp))
 
             Card(
                 modifier = Modifier
@@ -164,15 +138,18 @@ fun GameScreen(
                     onClick = {
                         if (isAdmin) {
                             database.child("status").setValue("waiting")
-                        } else {
-                            onRepeat()
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(60.dp),
                     shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PurpleGradient)
+                    enabled = isAdmin,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PurpleGradient,
+                        disabledContainerColor = PurpleGradient.copy(alpha = 0.3f),
+                        disabledContentColor = Color.White.copy(alpha = 0.5f)
+                    )
                 ) {
-                    Text("PONOBI", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("PONOVI", color = Color.White, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

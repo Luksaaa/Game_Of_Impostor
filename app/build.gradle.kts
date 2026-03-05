@@ -53,6 +53,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
+    // QR Code generation
+    implementation(libs.zxing.core)
+
     // Testiranje
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

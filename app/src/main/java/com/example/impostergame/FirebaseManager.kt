@@ -12,19 +12,7 @@ object FirebaseManager {
     val roomsRef: DatabaseReference = database.getReference("rooms")
 
     fun generateRoom(username: String, onComplete: (String) -> Unit) {
-        // Provjera broja soba prije kreiranja nove
-        roomsRef.get().addOnSuccessListener { snapshot ->
-            if (snapshot.childrenCount >= 20) {
-                // Brišemo sve sobe ako ih ima 20 ili više
-                roomsRef.removeValue().addOnSuccessListener {
-                    createNewRoom(username, onComplete)
-                }
-            } else {
-                createNewRoom(username, onComplete)
-            }
-        }.addOnFailureListener {
-            createNewRoom(username, onComplete)
-        }
+        createNewRoom(username, onComplete)
     }
 
     private fun createNewRoom(username: String, onComplete: (String) -> Unit) {

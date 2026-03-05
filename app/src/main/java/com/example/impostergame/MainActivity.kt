@@ -1,5 +1,6 @@
 package com.example.impostergame
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,25 +13,38 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+        
+        val sharedPref = getSharedPreferences("ImposterGamePrefs", Context.MODE_PRIVATE)
+        val savedUsername = sharedPref.getString("username", "") ?: ""
+        
         enableEdgeToEdge()
         setContent {
             ImposterGameTheme {
-                ImposterApp()
+                ImposterApp(savedUsername) { newName, rememberMe ->
+                    if (rememberMe) {
+                        sharedPref.edit().putString("username", newName).apply()
+                    } else {
+                        sharedPref.edit().remove("username").apply()
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun ImposterApp() {
-    var currentScreen by remember { mutableStateOf(Screen.ENTER_NAME) }
-    var username by remember { mutableStateOf("") }
+fun ImposterApp(initialUsername: String, onNameSaved: (String, Boolean) -> Unit) {
+    var username by remember { mutableStateOf(initialUsername) }
+    var currentScreen by remember { 
+        mutableStateOf(if (username.isBlank()) Screen.ENTER_NAME else Screen.HOME) 
+    }
     var roomCode by remember { mutableStateOf("") }
     var isAdmin by remember { mutableStateOf(false) }
 
     when (currentScreen) {
-        Screen.ENTER_NAME -> EnterNameScreen { name ->
+        Screen.ENTER_NAME -> EnterNameScreen { name, rememberMe ->
             username = name
+            onNameSaved(name, rememberMe)
             currentScreen = Screen.HOME
         }
         Screen.HOME -> HomeScreen(

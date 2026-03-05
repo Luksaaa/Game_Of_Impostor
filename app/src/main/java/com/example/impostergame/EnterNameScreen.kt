@@ -1,6 +1,7 @@
 package com.example.impostergame
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,8 +18,11 @@ import com.example.impostergame.ui.components.AnimatedBackground
 import com.example.impostergame.ui.theme.*
 
 @Composable
-fun EnterNameScreen(onNameEntered: (String) -> Unit) {
+fun EnterNameScreen(onNameEntered: (String, Boolean) -> Unit) {
     var name by remember { mutableStateOf("") }
+    var rememberMe by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
     val isDarkTheme = isSystemInDarkTheme()
     val textColor = if (isDarkTheme) Color.White else Color.Black
     val inputContainerColor = if (isDarkTheme) DarkInputGray else Color.White
@@ -71,23 +75,63 @@ fun EnterNameScreen(onNameEntered: (String) -> Unit) {
 
                     OutlinedTextField(
                         value = name,
-                        onValueChange = { if (it.length <= 12) name = it },
+                        onValueChange = { 
+                            name = it
+                            errorMessage = null // Brišemo grešku dok korisnik piše
+                        },
                         placeholder = { Text("Username...", color = textColor.copy(alpha = 0.4f)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
+                        isError = errorMessage != null,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BlueGradient,
                             unfocusedBorderColor = textColor.copy(alpha = 0.2f),
                             focusedTextColor = textColor,
-                            unfocusedTextColor = textColor
+                            unfocusedTextColor = textColor,
+                            errorBorderColor = Color.Red
                         )
                     )
+
+                    if (errorMessage != null) {
+                        Text(
+                            text = errorMessage!!,
+                            color = Color.Red,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 4.dp).align(Alignment.Start)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = rememberMe,
+                            onCheckedChange = { rememberMe = it },
+                            colors = CheckboxDefaults.colors(checkedColor = BlueGradient)
+                        )
+                        Text(
+                            text = "Zapamti me",
+                            color = textColor,
+                            fontSize = 14.sp,
+                            modifier = Modifier.clickable { rememberMe = !rememberMe }
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
-                        onClick = { if (name.isNotBlank()) onNameEntered(name) },
+                        onClick = { 
+                            when {
+                                name.isBlank() -> errorMessage = "Ime ne smije biti prazno"
+                                name.length > 8 -> errorMessage = "Ime ne smije biti duže od 8 znakova"
+                                name.all { it.isDigit() } -> errorMessage = "Ime ne smije sadržavati samo brojeve"
+                                else -> onNameEntered(name, rememberMe)
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),

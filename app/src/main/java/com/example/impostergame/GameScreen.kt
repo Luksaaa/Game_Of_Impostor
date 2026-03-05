@@ -1,5 +1,8 @@
 package com.example.impostergame
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -58,20 +61,27 @@ fun GameScreen(roomCode: String, username: String, onNewGame: () -> Unit) {
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("TVOJA ULOGA", fontSize = 16.sp, color = textColor.copy(alpha = 0.5f), fontWeight = FontWeight.Bold)
-                
-                Surface(
-                    color = if (role == "IMPOSTOR") ImposterRed.copy(alpha = 0.1f) else CrewmateGreen.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.padding(top = 8.dp)
+                // Skrivanje uloge kada je riječ otkrivena
+                AnimatedVisibility(
+                    visible = !isRevealed,
+                    enter = fadeIn(),
+                    exit = fadeOut()
                 ) {
-                    Text(
-                        text = role,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (role == "IMPOSTOR") ImposterRed else CrewmateGreen
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Surface(
+                            color = if (role == "IMPOSTOR") ImposterRed.copy(alpha = 0.1f) else CrewmateGreen.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Text(
+                                text = role,
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = if (role == "IMPOSTOR") ImposterRed else CrewmateGreen
+                            )
+                        }
+                    }
                 }
             }
 
@@ -96,7 +106,6 @@ fun GameScreen(roomCode: String, username: String, onNewGame: () -> Unit) {
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            Text("Tvoja tajna riječ:", fontSize = 18.sp, color = textColor.copy(alpha = 0.6f))
                             Text(
                                 text = word,
                                 fontSize = 42.sp,

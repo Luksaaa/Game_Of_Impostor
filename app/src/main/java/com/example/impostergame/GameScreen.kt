@@ -27,11 +27,17 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 
 @Composable
-fun GameScreen(roomCode: String, username: String, onNewGame: () -> Unit) {
+fun GameScreen(
+    roomCode: String, 
+    username: String, 
+    isAdmin: Boolean,
+    onRepeat: () -> Unit,
+    onNewGame: () -> Unit
+) {
     val database = Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms").child(roomCode)
     
-    var role by remember { mutableStateOf("") }
     var word by remember { mutableStateOf("") }
+    var role by remember { mutableStateOf("") }
     var isRevealed by remember { mutableStateOf(false) }
 
     val isDarkTheme = isSystemInDarkTheme()
@@ -39,16 +45,26 @@ fun GameScreen(roomCode: String, username: String, onNewGame: () -> Unit) {
     val containerColor = if (isDarkTheme) DarkInputGray else Color.White
 
     LaunchedEffect(Unit) {
-        database.get().addOnSuccessListener { snapshot ->
-            val imposterId = snapshot.child("imposterId").getValue(String::class.java)
-            if (imposterId == username) {
-                role = "IMPOSTOR"
-                word = snapshot.child("imposterWord").getValue(String::class.java) ?: ""
-            } else {
-                role = "CREWMATE"
-                word = snapshot.child("mainWord").getValue(String::class.java) ?: ""
+        // Listener za promjenu statusa (ako admin klikne ponovi)
+        database.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!snapshot.exists()) return
+                val status = snapshot.child("status").getValue(String::class.java)
+                if (status == "waiting") {
+                    onRepeat()
+                }
+
+                val imposterId = snapshot.child("imposterId").getValue(String::class.java)
+                if (imposterId == username) {
+                    role = "IMPOSTOR"
+                    word = snapshot.child("imposterWord").getValue(String::class.java) ?: ""
+                } else {
+                    role = "CREWMATE"
+                    word = snapshot.child("mainWord").getValue(String::class.java) ?: ""
+                }
             }
-        }
+            override fun onCancelled(error: DatabaseError) {}
+        })
     }
 
     AnimatedBackground {
@@ -107,6 +123,11 @@ fun GameScreen(roomCode: String, username: String, onNewGame: () -> Unit) {
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
+                                text = "Tvoja tajna riječ:", 
+                                fontSize = 18.sp, 
+                                color = textColor.copy(alpha = 0.6f)
+                            )
+                            Text(
                                 text = word,
                                 fontSize = 42.sp,
                                 fontWeight = FontWeight.ExtraBold,
@@ -138,13 +159,32 @@ fun GameScreen(roomCode: String, username: String, onNewGame: () -> Unit) {
                 }
             }
 
-            Button(
-                onClick = onNewGame,
-                modifier = Modifier.fillMaxWidth().height(60.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f))
-            ) {
-                Text("NOVA IGRA", color = textColor, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = {
+                        if (isAdmin) {
+                            database.child("status").setValue("waiting")
+                        } else {
+                            onRepeat()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(60.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PurpleGradient)
+                ) {
+                    Text("PONOBI", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onNewGame,
+                    modifier = Modifier.fillMaxWidth().height(60.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f))
+                ) {
+                    Text("NOVA IGRA", color = textColor, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

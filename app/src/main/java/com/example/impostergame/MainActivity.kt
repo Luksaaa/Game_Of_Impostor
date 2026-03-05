@@ -80,6 +80,10 @@ fun ImposterApp(initialUsername: String, onNameSaved: (String, Boolean) -> Unit)
         Screen.GAME -> GameScreen(
             roomCode = roomCode,
             username = username,
+            isAdmin = isAdmin,
+            onRepeat = {
+                currentScreen = Screen.LOBBY
+            },
             onNewGame = {
                 currentScreen = Screen.HOME
             }

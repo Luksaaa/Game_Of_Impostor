@@ -1,5 +1,13 @@
 package com.example.impostergame
 
+enum class Screen {
+    ENTER_NAME,
+    HOME,
+    JOIN,
+    LOBBY,
+    GAME
+}
+
 data class Room(
     val admin: String = "",
     val status: String = "waiting", // waiting, started

@@ -1,5 +1,6 @@
 package com.example.impostergame
 
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -7,18 +8,17 @@ import com.google.firebase.ktx.Firebase
 object FirebaseManager {
     private const val DATABASE_URL = "https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/"
     
-    private val database = Firebase.database(DATABASE_URL)
-    val roomsRef = database.getReference("rooms")
+    private val database: FirebaseDatabase = Firebase.database(DATABASE_URL)
+    val roomsRef: DatabaseReference = database.getReference("rooms")
 
     fun generateRoom(username: String, onComplete: (String) -> Unit) {
         val code = generateRandomCode()
         
-        // Provjera postoji li kod (iako je mala šansa za duplikat)
         roomsRef.child(code).get().addOnSuccessListener { snapshot ->
             if (snapshot.exists()) {
                 generateRoom(username, onComplete) // Ponovi ako postoji
             } else {
-                val roomData = mapOf(
+                val roomData: Map<String, Any> = mapOf(
                     "admin" to username,
                     "status" to "waiting",
                     "players" to mapOf(username to true),
@@ -28,6 +28,9 @@ object FirebaseManager {
                     onComplete(code)
                 }
             }
+        }.addOnFailureListener {
+            // U slučaju greške kod dohvaćanja (npr. nema neta), pokušaj ipak napraviti
+            // ili javi grešku. Ovdje ćemo samo logirati ili pretpostaviti da možemo.
         }
     }
 

@@ -3,7 +3,9 @@ package com.example.impostergame
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
@@ -14,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,16 +27,22 @@ import com.example.impostergame.ui.theme.*
 fun HomeScreen(username: String, onCreateRoom: () -> Unit, onJoinRoom: () -> Unit) {
     val isDarkTheme = isSystemInDarkTheme()
     val textColor = if (isDarkTheme) Color.White else Color.Black
+    
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
 
     AnimatedBackground {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp)
-                .statusBarsPadding(),
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(screenHeight * 0.05f))
+
             Text(
                 text = "Bok, $username!",
                 fontSize = 28.sp,
@@ -47,7 +56,7 @@ fun HomeScreen(username: String, onCreateRoom: () -> Unit, onJoinRoom: () -> Uni
                 color = textColor.copy(alpha = 0.6f)
             )
 
-            Spacer(modifier = Modifier.height(64.dp))
+            Spacer(modifier = Modifier.height(screenHeight * 0.08f))
 
             MenuButton(
                 text = "Napravi sobu",
@@ -64,6 +73,8 @@ fun HomeScreen(username: String, onCreateRoom: () -> Unit, onJoinRoom: () -> Uni
                 onClick = onJoinRoom,
                 gradient = listOf(PurpleGradient, PurpleGradient.copy(alpha = 0.7f))
             )
+            
+            Spacer(modifier = Modifier.height(screenHeight * 0.05f))
         }
     }
 }

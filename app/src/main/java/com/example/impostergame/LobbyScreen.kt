@@ -199,20 +199,6 @@ fun LobbyScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedButton(
-                onClick = {
-                    FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onLeaveRoom)
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f))
-            ) {
-                Text("IZAĐI IZ SOBE", fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             if (isUserAdmin) {
                 Button(
                     onClick = {
@@ -271,6 +257,20 @@ fun LobbyScreen(
                         Text("Čekamo admina...", color = textColor)
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = {
+                    FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onLeaveRoom)
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f))
+            ) {
+                Text("IZAĐI IZ SOBE", fontWeight = FontWeight.Bold)
             }
         }
     }

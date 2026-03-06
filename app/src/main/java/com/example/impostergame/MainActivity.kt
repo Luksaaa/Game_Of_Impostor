@@ -20,6 +20,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.edit
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.impostergame.ui.components.AnimatedBackground
 import com.example.impostergame.ui.theme.ImposterGameTheme
@@ -32,6 +33,9 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+        
+        // Učitavamo riječi iz txt rječnika
+        WordManager.loadWords(this)
         
         val sharedPref = getSharedPreferences("ImposterGamePrefs", Context.MODE_PRIVATE)
         val savedUsername = sharedPref.getString("username", "") ?: ""
@@ -80,9 +84,9 @@ class MainActivity : ComponentActivity() {
                 AnimatedBackground(xOffset = xOffset, yOffset = yOffset) {
                     ImposterApp(savedUsername, initialRoomCode, savedIsAdmin) { newName, rememberMe ->
                         if (rememberMe) {
-                            sharedPref.edit().putString("username", newName).apply()
+                            sharedPref.edit { putString("username", newName) }
                         } else {
-                            sharedPref.edit().remove("username").apply()
+                            sharedPref.edit { remove("username") }
                         }
                     }
                 }
@@ -111,10 +115,10 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
     // Spremanje sobe za perzistentnost
     LaunchedEffect(roomCode, isAdmin) {
         val sharedPref = context.getSharedPreferences("ImposterGamePrefs", Context.MODE_PRIVATE)
-        sharedPref.edit()
-            .putString("persistentRoomCode", roomCode)
-            .putBoolean("persistentIsAdmin", isAdmin)
-            .apply()
+        sharedPref.edit {
+            putString("persistentRoomCode", roomCode)
+            putBoolean("persistentIsAdmin", isAdmin)
+        }
     }
 
     // Automatsko spajanje (za QR kod ili perzistentnu sesiju)

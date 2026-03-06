@@ -205,8 +205,8 @@ fun LobbyScreen(
                 if (isUserAdmin) {
                     Button(
                         onClick = {
-                            val mainWord = croatianWords.random()
-                            val imposterWord = croatianWords.filter { it != mainWord }.random()
+                            val mainWord = WordManager.getRandomWord()
+                            val imposterWord = WordManager.getRandomImposterWord(mainWord)
                             database.get().addOnSuccessListener { snapshot ->
                                 val players = snapshot.child("players").children.map { it.key!! }
                                 if (players.isNotEmpty()) {

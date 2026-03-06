@@ -1,5 +1,7 @@
 package com.example.impostergame
 
+import android.content.Context
+
 enum class Screen {
     ENTER_NAME,
     HOME,
@@ -23,9 +25,31 @@ data class PlayerInfo(
     val isReady: Boolean = false
 )
 
-val croatianWords = listOf(
-    "Jabuka", "Kruška", "Automobil", "Zrakoplov", "Hrvatska", "Zadar", "Zagreb", "More",
-    "Sunce", "Knjiga", "Računalo", "Mobitel", "Škola", "Lopta", "Rijeka", "Planina",
-    "Šuma", "Kava", "Čaj", "Ručak", "Televizor", "Gitara", "Plaža", "Sladoled", "Otok",
-    "Bicikl", "Prozor", "Vrata", "Krevet", "Stol", "Stolica", "Tanjur", "Čaša", "Sat"
-)
+object WordManager {
+    private var words: List<String> = emptyList()
+
+    fun loadWords(context: Context) {
+        if (words.isNotEmpty()) return
+        try {
+            // Otvaramo sirovu datoteku (res/raw/hrvatski_rijecnik.txt)
+            val inputStream = context.resources.openRawResource(R.raw.hrvatski_rijecnik)
+            words = inputStream.bufferedReader().useLines { lines ->
+                lines.filter { line ->
+                    line.isNotBlank() && !line.startsWith("Slovo ")
+                }.map { it.trim() }.toList()
+            }
+        } catch (e: Exception) {
+            // Fallback ako dođe do greške
+            words = listOf("Jabuka", "Kruška", "Automobil", "Zagreb", "More", "Sunce", "Knjiga")
+        }
+    }
+
+    fun getRandomWord(): String {
+        return if (words.isNotEmpty()) words.random() else "Jabuka"
+    }
+
+    fun getRandomImposterWord(exclude: String): String {
+        val filtered = words.filter { it != exclude }
+        return if (filtered.isNotEmpty()) filtered.random() else "Kruška"
+    }
+}

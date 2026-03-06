@@ -25,6 +25,10 @@ fun AnimatedBackground(
     val blueAlpha = if (isDarkTheme) 0.2f else 0.62f
     val purpleAlpha = if (isDarkTheme) 0.2f else 0.62f
 
+    // Smanjujemo radijus krugova za tamni način rada
+    val blueRadius = if (isDarkTheme) 200.dp else 350.dp
+    val purpleRadius = if (isDarkTheme) 180.dp else 300.dp
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -38,9 +42,9 @@ fun AnimatedBackground(
                         Color.Transparent
                     ),
                     center = Offset(xOffset.dp.toPx(), yOffset.dp.toPx()),
-                    radius = 350.dp.toPx()
+                    radius = blueRadius.toPx()
                 ),
-                radius = 350.dp.toPx(),
+                radius = blueRadius.toPx(),
                 center = Offset(xOffset.dp.toPx(), yOffset.dp.toPx())
             )
             
@@ -51,9 +55,9 @@ fun AnimatedBackground(
                         Color.Transparent
                     ),
                     center = Offset((400 - xOffset).dp.toPx(), (800 - yOffset).dp.toPx()),
-                    radius = 300.dp.toPx()
+                    radius = purpleRadius.toPx()
                 ),
-                radius = 300.dp.toPx(),
+                radius = purpleRadius.toPx(),
                 center = Offset((400 - xOffset).dp.toPx(), (800 - yOffset).dp.toPx())
             )
         }

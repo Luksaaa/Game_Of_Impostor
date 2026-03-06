@@ -16,7 +16,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -38,7 +37,7 @@ import java.util.Locale
 fun GameScreen(
     roomCode: String, 
     username: String, 
-    isAdmin: Boolean,
+    @Suppress("UNUSED_PARAMETER") isAdmin: Boolean,
     onRepeat: () -> Unit,
     onNewGame: () -> Unit
 ) {
@@ -183,7 +182,7 @@ fun GameScreen(
                     exit = fadeOut()
                 ) {
                     Text(
-                        text = if (showAdminOnlyMessage) "Samo admin može ponoviti igru" else "Zadrži 3 sekunde za ponavljanje",
+                        text = if (showAdminOnlyMessage) "Samo admin može ponoviti igru" else "Zadrži 2 sekunde za ponavljanje",
                         color = if (showAdminOnlyMessage) Color.Red else BlueGradient,
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Bold
@@ -193,7 +192,6 @@ fun GameScreen(
 
             var holdJob by remember { mutableStateOf<Job?>(null) }
 
-            // Zamjena Buttona s Box-om za bolju kontrolu gesti
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -209,7 +207,7 @@ fun GameScreen(
                                     if (!showHoldMessage) {
                                         showHoldMessage = true
                                         scope.launch {
-                                            delay(3000)
+                                            delay(2000)
                                             if (holdProgress == 0f) showHoldMessage = false
                                         }
                                     }
@@ -218,9 +216,9 @@ fun GameScreen(
                                     showHoldMessage = true
                                     holdJob = scope.launch {
                                         val startTime = System.currentTimeMillis()
-                                        while (holdProgress < 3f) {
+                                        while (holdProgress < 2f) {
                                             val elapsed = System.currentTimeMillis() - startTime
-                                            holdProgress = (elapsed / 1000f).coerceAtMost(3f)
+                                            holdProgress = (elapsed / 1000f).coerceAtMost(2f)
                                             delay(10)
                                         }
                                         database.child("status").setValue("waiting")

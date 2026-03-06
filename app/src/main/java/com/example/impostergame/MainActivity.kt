@@ -8,10 +8,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.impostergame.ui.components.AnimatedBackground
 import com.example.impostergame.ui.theme.ImposterGameTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.ktx.database
@@ -43,11 +53,35 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ImposterGameTheme {
-                ImposterApp(savedUsername, initialRoomCode, savedIsAdmin) { newName, rememberMe ->
-                    if (rememberMe) {
-                        sharedPref.edit().putString("username", newName).apply()
-                    } else {
-                        sharedPref.edit().remove("username").apply()
+                val infiniteTransition = rememberInfiniteTransition(label = "global_background")
+                
+                val xOffset by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 400f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(10000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "x"
+                )
+                
+                val yOffset by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 800f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(15000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "y"
+                )
+
+                AnimatedBackground(xOffset = xOffset, yOffset = yOffset) {
+                    ImposterApp(savedUsername, initialRoomCode, savedIsAdmin) { newName, rememberMe ->
+                        if (rememberMe) {
+                            sharedPref.edit().putString("username", newName).apply()
+                        } else {
+                            sharedPref.edit().remove("username").apply()
+                        }
                     }
                 }
             }
@@ -123,7 +157,7 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
     }
 
     when (currentScreen) {
-        Screen.ENTER_NAME -> EnterNameScreen { name, rememberMe ->
+        Screen.ENTER_NAME -> EnterNameScreen(noBackground = true) { name, rememberMe ->
             username = name
             onNameSaved(name, rememberMe)
             if (roomCode.isNotBlank()) {
@@ -136,6 +170,7 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
         }
         Screen.HOME -> HomeScreen(
             username = username,
+            noBackground = true,
             onCreateRoom = {
                 FirebaseManager.generateRoom(username) { code ->
                     roomCode = code
@@ -150,6 +185,7 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
         )
         Screen.JOIN -> JoinRoomScreen(
             username = username,
+            noBackground = true,
             onJoined = { code ->
                 roomCode = code
                 isAdmin = false
@@ -161,6 +197,7 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
             roomCode = roomCode,
             username = username,
             isAdmin = isAdmin,
+            noBackground = true,
             onLeaveRoom = {
                 currentScreen = Screen.HOME
                 roomCode = ""
@@ -174,6 +211,7 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
             roomCode = roomCode,
             username = username,
             isAdmin = isAdmin,
+            noBackground = true,
             onRepeat = {
                 currentScreen = Screen.LOBBY
             },

@@ -20,6 +20,10 @@ fun AnimatedBackground(content: @Composable () -> Unit) {
     val isDarkTheme = isSystemInDarkTheme()
     val backgroundColor = if (isDarkTheme) DarkGray else LightGray
     
+    // Dodatno pojačavamo prozirnost (alpha) za svijetli način rada kako bi boje bile još izraženije
+    val blueAlpha = if (isDarkTheme) 0.2f else 0.62f
+    val purpleAlpha = if (isDarkTheme) 0.2f else 0.62f
+    
     val infiniteTransition = rememberInfiniteTransition(label = "background")
     
     val xOffset by infiniteTransition.animateFloat(
@@ -51,24 +55,24 @@ fun AnimatedBackground(content: @Composable () -> Unit) {
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        BlueGradient.copy(alpha = 0.15f),
+                        BlueGradient.copy(alpha = blueAlpha),
                         Color.Transparent
                     ),
                     center = Offset(xOffset.dp.toPx(), yOffset.dp.toPx()),
-                    radius = 300.dp.toPx()
+                    radius = 250.dp.toPx() // Malo povećan radijus za bolji efekt
                 ),
-                radius = 300.dp.toPx(),
+                radius = 250.dp.toPx(),
                 center = Offset(xOffset.dp.toPx(), yOffset.dp.toPx())
             )
             
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        PurpleGradient.copy(alpha = 0.1f),
+                        PurpleGradient.copy(alpha = purpleAlpha),
                         Color.Transparent
                     ),
                     center = Offset((400 - xOffset).dp.toPx(), (800 - yOffset).dp.toPx()),
-                    radius = 250.dp.toPx()
+                    radius = 250.dp.toPx() // Malo povećan radijus za bolji efekt
                 ),
                 radius = 250.dp.toPx(),
                 center = Offset((400 - xOffset).dp.toPx(), (800 - yOffset).dp.toPx())

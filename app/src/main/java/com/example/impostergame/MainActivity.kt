@@ -14,11 +14,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.impostergame.ui.components.AnimatedBackground
@@ -53,6 +49,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ImposterGameTheme {
+                // Globalna animacija koja se pokreće jednom na razini MainActivity
                 val infiniteTransition = rememberInfiniteTransition(label = "global_background")
                 
                 val xOffset by infiniteTransition.animateFloat(
@@ -75,6 +72,7 @@ class MainActivity : ComponentActivity() {
                     label = "y"
                 )
 
+                // Pozadina je sada omotač oko cijele aplikacije
                 AnimatedBackground(xOffset = xOffset, yOffset = yOffset) {
                     ImposterApp(savedUsername, initialRoomCode, savedIsAdmin) { newName, rememberMe ->
                         if (rememberMe) {
@@ -119,8 +117,6 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
     LaunchedEffect(roomCode) {
         if (roomCode.isNotBlank() && username.isNotBlank()) {
             joinRoomLogic(database, roomCode, username) {
-                // Ako smo se uspješno spojili (ili smo već unutra), osiguravamo da smo na LOBBY ekranu
-                // (LobbyScreen će nas sam prebaciti u GAME ako je igra u tijeku)
                 if (currentScreen != Screen.GAME) {
                     currentScreen = Screen.LOBBY
                 }
@@ -157,7 +153,7 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
     }
 
     when (currentScreen) {
-        Screen.ENTER_NAME -> EnterNameScreen(noBackground = true) { name, rememberMe ->
+        Screen.ENTER_NAME -> EnterNameScreen { name, rememberMe ->
             username = name
             onNameSaved(name, rememberMe)
             if (roomCode.isNotBlank()) {
@@ -170,7 +166,6 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
         }
         Screen.HOME -> HomeScreen(
             username = username,
-            noBackground = true,
             onCreateRoom = {
                 FirebaseManager.generateRoom(username) { code ->
                     roomCode = code
@@ -185,7 +180,6 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
         )
         Screen.JOIN -> JoinRoomScreen(
             username = username,
-            noBackground = true,
             onJoined = { code ->
                 roomCode = code
                 isAdmin = false
@@ -197,7 +191,6 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
             roomCode = roomCode,
             username = username,
             isAdmin = isAdmin,
-            noBackground = true,
             onLeaveRoom = {
                 currentScreen = Screen.HOME
                 roomCode = ""
@@ -211,7 +204,6 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
             roomCode = roomCode,
             username = username,
             isAdmin = isAdmin,
-            noBackground = true,
             onRepeat = {
                 currentScreen = Screen.LOBBY
             },
@@ -233,7 +225,6 @@ private fun joinRoomLogic(
     database.child(code).get().addOnSuccessListener { snapshot ->
         if (snapshot.exists()) {
             val playersSnapshot = snapshot.child("players")
-            // Ako je igrač već unutra (npr. rekonekcija), samo nastavi
             if (playersSnapshot.hasChild(username)) {
                 onSuccess()
             } else if (playersSnapshot.childrenCount < 8) {

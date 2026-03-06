@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.impostergame.ui.components.AnimatedBackground
 import com.example.impostergame.ui.theme.*
 
 @Composable
@@ -33,144 +32,142 @@ fun EnterNameScreen(onNameEntered: (String, Boolean) -> Unit) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
 
-    AnimatedBackground {
-        Box(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .imePadding()
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Flexible spacing based on screen height
+            Spacer(modifier = Modifier.height(screenHeight * 0.05f))
+
+            Text(
+                text = "IMPOSTOR GAME",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = BlueGradient,
+                letterSpacing = 4.sp
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = "Tko je među nama?",
+                fontSize = 16.sp,
+                color = textColor.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier = Modifier.height(screenHeight * 0.08f))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = inputContainerColor.copy(alpha = 0.9f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                // Flexible spacing based on screen height
-                Spacer(modifier = Modifier.height(screenHeight * 0.05f))
-
-                Text(
-                    text = "IMPOSTOR GAME",
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = BlueGradient,
-                    letterSpacing = 4.sp
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "Tko je među nama?",
-                    fontSize = 16.sp,
-                    color = textColor.copy(alpha = 0.7f)
-                )
-
-                Spacer(modifier = Modifier.height(screenHeight * 0.08f))
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = inputContainerColor.copy(alpha = 0.9f)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Text(
+                        text = "Unesi svoje ime",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textColor
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { 
+                            name = it
+                            errorMessage = null 
+                        },
+                        placeholder = { Text("Username...", color = textColor.copy(alpha = 0.4f)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        isError = errorMessage != null,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = BlueGradient,
+                            unfocusedBorderColor = textColor.copy(alpha = 0.2f),
+                            focusedTextColor = textColor,
+                            unfocusedTextColor = textColor,
+                            errorBorderColor = Color.Red
+                        )
+                    )
+
+                    if (errorMessage != null) {
                         Text(
-                            text = "Unesi svoje ime",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = textColor
+                            text = errorMessage!!,
+                            color = Color.Red,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 4.dp).align(Alignment.Start)
                         )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
+                    }
 
-                        OutlinedTextField(
-                            value = name,
-                            onValueChange = { 
-                                name = it
-                                errorMessage = null 
-                            },
-                            placeholder = { Text("Username...", color = textColor.copy(alpha = 0.4f)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            isError = errorMessage != null,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = BlueGradient,
-                                unfocusedBorderColor = textColor.copy(alpha = 0.2f),
-                                focusedTextColor = textColor,
-                                unfocusedTextColor = textColor,
-                                errorBorderColor = Color.Red
-                            )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = rememberMe,
+                            onCheckedChange = { rememberMe = it },
+                            colors = CheckboxDefaults.colors(checkedColor = BlueGradient)
                         )
+                        Text(
+                            text = "Zapamti me",
+                            color = textColor,
+                            fontSize = 14.sp,
+                            modifier = Modifier.clickable { rememberMe = !rememberMe }
+                        )
+                    }
 
-                        if (errorMessage != null) {
-                            Text(
-                                text = errorMessage!!,
-                                color = Color.Red,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 4.dp).align(Alignment.Start)
-                            )
-                        }
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(
-                                checked = rememberMe,
-                                onCheckedChange = { rememberMe = it },
-                                colors = CheckboxDefaults.colors(checkedColor = BlueGradient)
-                            )
-                            Text(
-                                text = "Zapamti me",
-                                color = textColor,
-                                fontSize = 14.sp,
-                                modifier = Modifier.clickable { rememberMe = !rememberMe }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Button(
-                            onClick = { 
-                                when {
-                                    name.isBlank() -> errorMessage = "Ime ne smije biti prazno"
-                                    name.length > 8 -> errorMessage = "Ime ne smije biti duže od 8 znakova"
-                                    name.all { it.isDigit() } -> errorMessage = "Ime ne smije sadržavati samo brojeve"
-                                    else -> onNameEntered(name, rememberMe)
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                            contentPadding = PaddingValues()
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        brush = Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient)),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("KRENI", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Button(
+                        onClick = { 
+                            when {
+                                name.isBlank() -> errorMessage = "Ime ne smije biti prazno"
+                                name.length > 8 -> errorMessage = "Ime ne smije biti duže od 8 znakova"
+                                name.all { it.isDigit() } -> errorMessage = "Ime ne smije sadržavati samo brojeve"
+                                else -> onNameEntered(name, rememberMe)
                             }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        contentPadding = PaddingValues()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    brush = Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient)),
+                                    shape = RoundedCornerShape(16.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("KRENI", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(screenHeight * 0.05f))
             }
+            
+            Spacer(modifier = Modifier.height(screenHeight * 0.05f))
         }
     }
 }

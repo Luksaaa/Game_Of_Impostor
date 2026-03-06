@@ -8,12 +8,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -152,67 +156,75 @@ fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin
         else -> { /* Na HOME i ENTER_NAME dozvoli standardni Back (izlaz iz aplikacije) */ }
     }
 
-    when (currentScreen) {
-        Screen.ENTER_NAME -> EnterNameScreen { name, rememberMe ->
-            username = name
-            onNameSaved(name, rememberMe)
-            if (roomCode.isNotBlank()) {
-                joinRoomLogic(database, roomCode, name) {
-                    currentScreen = Screen.LOBBY
+    AnimatedContent(
+        targetState = currentScreen,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(500)).togetherWith(fadeOut(animationSpec = tween(500)))
+        },
+        label = "screen_transition"
+    ) { targetScreen ->
+        when (targetScreen) {
+            Screen.ENTER_NAME -> EnterNameScreen { name, rememberMe ->
+                username = name
+                onNameSaved(name, rememberMe)
+                if (roomCode.isNotBlank()) {
+                    joinRoomLogic(database, roomCode, name) {
+                        currentScreen = Screen.LOBBY
+                    }
+                } else {
+                    currentScreen = Screen.HOME
                 }
-            } else {
-                currentScreen = Screen.HOME
             }
-        }
-        Screen.HOME -> HomeScreen(
-            username = username,
-            onCreateRoom = {
-                FirebaseManager.generateRoom(username) { code ->
+            Screen.HOME -> HomeScreen(
+                username = username,
+                onCreateRoom = {
+                    FirebaseManager.generateRoom(username) { code ->
+                        roomCode = code
+                        isAdmin = true
+                        currentScreen = Screen.LOBBY
+                    }
+                },
+                onJoinRoom = {
+                    isAdmin = false
+                    currentScreen = Screen.JOIN
+                }
+            )
+            Screen.JOIN -> JoinRoomScreen(
+                username = username,
+                onJoined = { code ->
                     roomCode = code
-                    isAdmin = true
+                    isAdmin = false
                     currentScreen = Screen.LOBBY
+                },
+                onBack = { currentScreen = Screen.HOME }
+            )
+            Screen.LOBBY -> LobbyScreen(
+                roomCode = roomCode,
+                username = username,
+                isAdmin = isAdmin,
+                onLeaveRoom = {
+                    currentScreen = Screen.HOME
+                    roomCode = ""
+                    isAdmin = false
+                },
+                onGameStarted = {
+                    currentScreen = Screen.GAME
                 }
-            },
-            onJoinRoom = {
-                isAdmin = false
-                currentScreen = Screen.JOIN
-            }
-        )
-        Screen.JOIN -> JoinRoomScreen(
-            username = username,
-            onJoined = { code ->
-                roomCode = code
-                isAdmin = false
-                currentScreen = Screen.LOBBY
-            },
-            onBack = { currentScreen = Screen.HOME }
-        )
-        Screen.LOBBY -> LobbyScreen(
-            roomCode = roomCode,
-            username = username,
-            isAdmin = isAdmin,
-            onLeaveRoom = {
-                currentScreen = Screen.HOME
-                roomCode = ""
-                isAdmin = false
-            },
-            onGameStarted = {
-                currentScreen = Screen.GAME
-            }
-        )
-        Screen.GAME -> GameScreen(
-            roomCode = roomCode,
-            username = username,
-            isAdmin = isAdmin,
-            onRepeat = {
-                currentScreen = Screen.LOBBY
-            },
-            onNewGame = {
-                currentScreen = Screen.HOME
-                roomCode = ""
-                isAdmin = false
-            }
-        )
+            )
+            Screen.GAME -> GameScreen(
+                roomCode = roomCode,
+                username = username,
+                isAdmin = isAdmin,
+                onRepeat = {
+                    currentScreen = Screen.LOBBY
+                },
+                onNewGame = {
+                    currentScreen = Screen.HOME
+                    roomCode = ""
+                    isAdmin = false
+                }
+            )
+        }
     }
 }
 

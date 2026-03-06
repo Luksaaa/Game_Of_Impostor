@@ -197,114 +197,85 @@ fun LobbyScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Donja grupa gumba s fiksnom strukturom
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Prazan prostor od 32dp kako bi se gumbi poklapali s GameScreen-om
+                Spacer(modifier = Modifier.height(32.dp))
 
-            if (isUserAdmin) {
+                if (isUserAdmin) {
+                    Button(
+                        onClick = {
+                            val mainWord = croatianWords.random()
+                            val imposterWord = croatianWords.filter { it != mainWord }.random()
+                            database.get().addOnSuccessListener { snapshot ->
+                                val players = snapshot.child("players").children.map { it.key!! }
+                                if (players.isNotEmpty()) {
+                                    val imposter = players.random()
+                                    val updates = mapOf(
+                                        "mainWord" to mainWord,
+                                        "imposterWord" to imposterWord,
+                                        "imposterId" to imposter,
+                                        "status" to "started"
+                                    )
+                                    database.updateChildren(updates)
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(60.dp), // Ujednačena visina
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        contentPadding = PaddingValues(),
+                        enabled = playerCount >= 2
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    brush = if (playerCount >= 2) Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient))
+                                            else Brush.horizontalGradient(listOf(Color.Gray, Color.Gray)),
+                                    shape = RoundedCornerShape(20.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (playerCount < 2) "MIN 2 IGRAČA" else "POKRENI IGRU",
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                } else {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().height(60.dp), // Ujednačena visina
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Gold.copy(alpha = 0.1f))
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp, color = Gold)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("Čekamo admina...", color = textColor, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Button(
                     onClick = {
-                        val mainWord = croatianWords.random()
-                        val imposterWord = croatianWords.filter { it != mainWord }.random()
-                        database.get().addOnSuccessListener { snapshot ->
-                            val players = snapshot.child("players").children.map { it.key!! }
-                            if (players.isNotEmpty()) {
-                                val imposter = players.random()
-                                val updates = mapOf(
-                                    "mainWord" to mainWord,
-                                    "imposterWord" to imposterWord,
-                                    "imposterId" to imposter,
-                                    "status" to "started"
-                                )
-                                database.updateChildren(updates)
-                            }
-                        }
+                        FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onLeaveRoom)
                     },
-                    modifier = Modifier.fillMaxWidth().height(64.dp),
+                    modifier = Modifier.fillMaxWidth().height(60.dp), // Ujednačena visina
                     shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                    contentPadding = PaddingValues(),
-                    enabled = playerCount >= 2
+                    colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f))
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                brush = if (playerCount >= 2) Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient))
-                                        else Brush.horizontalGradient(listOf(Color.Gray, Color.Gray)),
-                                shape = RoundedCornerShape(20.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (playerCount < 2) "MIN 2 IGRAČA" else "POKRENI IGRU",
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            } else {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Gold.copy(alpha = 0.1f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp, color = Gold)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text("Čekamo admina...", color = textColor)
-                    }
+                    Text("IZAĐI IZ SOBE", color = textColor, fontWeight = FontWeight.Bold)
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = {
-                    FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onLeaveRoom)
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f))
-            ) {
-                Text("IZAĐI IZ SOBE", fontWeight = FontWeight.Bold)
-            }
         }
-    }
-}
-
-fun leaveRoomWithAdminTransfer(roomRef: DatabaseReference, username: String, onComplete: () -> Unit) {
-    roomRef.get().addOnSuccessListener { snapshot ->
-        if (!snapshot.exists()) {
-            onComplete()
-            return@addOnSuccessListener
-        }
-        
-        val currentAdmin = snapshot.child("admin").getValue(String::class.java)
-        val players = snapshot.child("players").children.toList()
-        
-        if (currentAdmin == username) {
-            val nextAdmin = players.firstOrNull { it.key != username }?.key
-            
-            if (nextAdmin != null) {
-                val updates = mutableMapOf<String, Any?>()
-                updates["admin"] = nextAdmin
-                updates["players/$username"] = null
-                updates["messages/${roomRef.push().key}"] = "$username je izašao, novi admin je $nextAdmin"
-                
-                roomRef.updateChildren(updates).addOnCompleteListener { onComplete() }
-            } else {
-                roomRef.removeValue().addOnCompleteListener { onComplete() }
-            }
-        } else {
-            roomRef.child("players").child(username).removeValue()
-            roomRef.child("messages").push().setValue("$username je izašao")
-            onComplete()
-        }
-    }.addOnFailureListener {
-        onComplete()
     }
 }

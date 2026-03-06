@@ -20,7 +20,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.impostergame.ui.components.AnimatedBackground
 import com.example.impostergame.ui.theme.*
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -85,137 +84,135 @@ fun GameScreen(
         }
     }
 
-    AnimatedBackground {
-        Column(
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)
+            .statusBarsPadding(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Spacer(modifier = Modifier.height(60.dp))
+
+        Card(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp)
-                .statusBarsPadding(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+                .fillMaxWidth()
+                .height(300.dp),
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = containerColor.copy(alpha = 0.9f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
         ) {
-            Spacer(modifier = Modifier.height(60.dp))
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                shape = RoundedCornerShape(32.dp),
-                colors = CardDefaults.cardColors(containerColor = containerColor.copy(alpha = 0.9f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
+            Column(
+                modifier = Modifier.fillMaxSize().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    if (isRevealed) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clickable { isRevealed = false },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "Tvoja tajna riječ:",
-                                color = textColor.copy(alpha = 0.7f),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = word,
-                                color = textColor,
-                                fontSize = 48.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    } else {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clickable { isRevealed = true },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Visibility,
-                                contentDescription = "Vidi",
-                                tint = PurpleGradient,
-                                modifier = Modifier.size(64.dp)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "Dodirni za otkrivanje",
-                                color = textColor.copy(alpha = 0.5f),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
-
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = showAdminOnlyMessage,
-                        enter = fadeIn(),
-                        exit = fadeOut()
+                if (isRevealed) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { isRevealed = false },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "Samo admin može ponoviti igru",
-                            color = Color.Red,
-                            textAlign = TextAlign.Center,
+                            text = "Tvoja tajna riječ:",
+                            color = textColor.copy(alpha = 0.7f),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = word,
+                            color = textColor,
+                            fontSize = 48.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { isRevealed = true },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Visibility,
+                            contentDescription = "Vidi",
+                            tint = PurpleGradient,
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Dodirni za otkrivanje",
+                            color = textColor.copy(alpha = 0.5f),
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
+            }
+        }
 
-                Button(
-                    onClick = {
-                        if (isUserAdmin) {
-                            database.child("status").setValue("waiting")
-                        } else {
-                            if (!showAdminOnlyMessage) {
-                                showAdminOnlyMessage = true
-                                scope.launch {
-                                    delay(3000)
-                                    showAdminOnlyMessage = false
-                                }
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = showAdminOnlyMessage,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Text(
+                        text = "Samo admin može ponoviti igru",
+                        color = Color.Red,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Button(
+                onClick = {
+                    if (isUserAdmin) {
+                        database.child("status").setValue("waiting")
+                    } else {
+                        if (!showAdminOnlyMessage) {
+                            showAdminOnlyMessage = true
+                            scope.launch {
+                                delay(3000)
+                                showAdminOnlyMessage = false
                             }
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(60.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    enabled = true,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isUserAdmin) PurpleGradient else PurpleGradient.copy(alpha = 0.3f),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text("PONOVI", color = Color.White, fontWeight = FontWeight.Bold)
-                }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+                shape = RoundedCornerShape(20.dp),
+                enabled = true,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isUserAdmin) PurpleGradient else PurpleGradient.copy(alpha = 0.3f),
+                    contentColor = Color.White
+                )
+            ) {
+                Text("PONOVI", color = Color.White, fontWeight = FontWeight.Bold)
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Button(
-                    onClick = {
-                        FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onNewGame)
-                    },
-                    modifier = Modifier.fillMaxWidth().height(60.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f))
-                ) {
-                    Text("IZAĐI IZ SOBE", color = textColor, fontWeight = FontWeight.Bold)
-                }
+            Button(
+                onClick = {
+                    FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onNewGame)
+                },
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f))
+            ) {
+                Text("IZAĐI IZ SOBE", color = textColor, fontWeight = FontWeight.Bold)
             }
         }
     }

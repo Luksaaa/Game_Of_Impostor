@@ -10,6 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.impostergame.ui.theme.ImposterGameTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.ktx.database
@@ -17,25 +19,31 @@ import com.google.firebase.ktx.Firebase
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
         
         val sharedPref = getSharedPreferences("ImposterGamePrefs", Context.MODE_PRIVATE)
         val savedUsername = sharedPref.getString("username", "") ?: ""
+        val savedRoomCode = sharedPref.getString("persistentRoomCode", "") ?: ""
+        val savedIsAdmin = sharedPref.getBoolean("persistentIsAdmin", false)
         
         // Provjera Deep Linka (QR kod)
         val action: String? = intent?.action
         val data: Uri? = intent?.data
-        var initialRoomCode = ""
+        var qrRoomCode = ""
         
         if (Intent.ACTION_VIEW == action && data != null) {
-            initialRoomCode = data.getQueryParameter("code") ?: ""
+            qrRoomCode = data.getQueryParameter("code") ?: ""
         }
+
+        // Ako imamo QR kod, on ima prednost nad spremljenom sobom
+        val initialRoomCode = if (qrRoomCode.isNotBlank()) qrRoomCode else savedRoomCode
 
         enableEdgeToEdge()
         setContent {
             ImposterGameTheme {
-                ImposterApp(savedUsername, initialRoomCode) { newName, rememberMe ->
+                ImposterApp(savedUsername, initialRoomCode, savedIsAdmin) { newName, rememberMe ->
                     if (rememberMe) {
                         sharedPref.edit().putString("username", newName).apply()
                     } else {
@@ -48,22 +56,40 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ImposterApp(initialUsername: String, qrRoomCode: String, onNameSaved: (String, Boolean) -> Unit) {
+fun ImposterApp(initialUsername: String, initialRoomCode: String, initialIsAdmin: Boolean, onNameSaved: (String, Boolean) -> Unit) {
     var username by remember { mutableStateOf(initialUsername) }
-    var roomCode by remember { mutableStateOf(qrRoomCode) }
+    var roomCode by remember { mutableStateOf(initialRoomCode) }
+    var isAdmin by remember { mutableStateOf(initialIsAdmin) }
     
     var currentScreen by remember { 
-        mutableStateOf(if (username.isBlank()) Screen.ENTER_NAME else if (qrRoomCode.isNotBlank()) Screen.LOBBY else Screen.HOME) 
+        mutableStateOf(
+            if (username.isBlank()) Screen.ENTER_NAME 
+            else if (roomCode.isNotBlank()) Screen.LOBBY 
+            else Screen.HOME
+        ) 
     }
-    var isAdmin by remember { mutableStateOf(false) }
     
+    val context = LocalContext.current
     val database = remember { Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms") }
 
-    // Automatsko spajanje ako postoji QR kod i username
-    LaunchedEffect(qrRoomCode) {
-        if (qrRoomCode.isNotBlank() && username.isNotBlank()) {
-            joinRoomLogic(database, qrRoomCode, username) {
-                currentScreen = Screen.LOBBY
+    // Spremanje sobe za perzistentnost
+    LaunchedEffect(roomCode, isAdmin) {
+        val sharedPref = context.getSharedPreferences("ImposterGamePrefs", Context.MODE_PRIVATE)
+        sharedPref.edit()
+            .putString("persistentRoomCode", roomCode)
+            .putBoolean("persistentIsAdmin", isAdmin)
+            .apply()
+    }
+
+    // Automatsko spajanje (za QR kod ili perzistentnu sesiju)
+    LaunchedEffect(roomCode) {
+        if (roomCode.isNotBlank() && username.isNotBlank()) {
+            joinRoomLogic(database, roomCode, username) {
+                // Ako smo se uspješno spojili (ili smo već unutra), osiguravamo da smo na LOBBY ekranu
+                // (LobbyScreen će nas sam prebaciti u GAME ako je igra u tijeku)
+                if (currentScreen != Screen.GAME) {
+                    currentScreen = Screen.LOBBY
+                }
             }
         }
     }
@@ -77,20 +103,20 @@ fun ImposterApp(initialUsername: String, qrRoomCode: String, onNameSaved: (Strin
         }
         Screen.LOBBY -> {
             BackHandler {
-                // Logika za izlazak iz sobe
-                database.child(roomCode).child("players").child(username).removeValue()
-                database.child(roomCode).child("messages").push().setValue("$username je izašao")
-                currentScreen = Screen.HOME
-                roomCode = ""
+                FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username) {
+                    currentScreen = Screen.HOME
+                    roomCode = ""
+                    isAdmin = false
+                }
             }
         }
         Screen.GAME -> {
             BackHandler {
-                // Logika za izlazak iz sobe tijekom igre
-                database.child(roomCode).child("players").child(username).removeValue()
-                database.child(roomCode).child("messages").push().setValue("$username je izašao")
-                currentScreen = Screen.HOME
-                roomCode = ""
+                FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username) {
+                    currentScreen = Screen.HOME
+                    roomCode = ""
+                    isAdmin = false
+                }
             }
         }
         else -> { /* Na HOME i ENTER_NAME dozvoli standardni Back (izlaz iz aplikacije) */ }
@@ -126,6 +152,7 @@ fun ImposterApp(initialUsername: String, qrRoomCode: String, onNameSaved: (Strin
             username = username,
             onJoined = { code ->
                 roomCode = code
+                isAdmin = false
                 currentScreen = Screen.LOBBY
             },
             onBack = { currentScreen = Screen.HOME }
@@ -137,6 +164,7 @@ fun ImposterApp(initialUsername: String, qrRoomCode: String, onNameSaved: (Strin
             onLeaveRoom = {
                 currentScreen = Screen.HOME
                 roomCode = ""
+                isAdmin = false
             },
             onGameStarted = {
                 currentScreen = Screen.GAME
@@ -152,6 +180,7 @@ fun ImposterApp(initialUsername: String, qrRoomCode: String, onNameSaved: (Strin
             onNewGame = {
                 currentScreen = Screen.HOME
                 roomCode = ""
+                isAdmin = false
             }
         )
     }
@@ -166,7 +195,10 @@ private fun joinRoomLogic(
     database.child(code).get().addOnSuccessListener { snapshot ->
         if (snapshot.exists()) {
             val playersSnapshot = snapshot.child("players")
-            if (playersSnapshot.childrenCount < 8) {
+            // Ako je igrač već unutra (npr. rekonekcija), samo nastavi
+            if (playersSnapshot.hasChild(username)) {
+                onSuccess()
+            } else if (playersSnapshot.childrenCount < 8) {
                 database.child(code).child("players").child(username).setValue(mapOf("name" to username, "isReady" to false)).addOnSuccessListener {
                     database.child(code).child("messages").push().setValue("$username je ušao")
                     onSuccess()

@@ -54,12 +54,12 @@ fun GameScreen(
     
     var word by remember { mutableStateOf("") }
     var isRevealed by remember { mutableStateOf(false) }
-    var holdProgress by rememberMutableFloatStateOf(0f)
+    var holdProgress by remember { mutableFloatStateOf(0f) }
     var currentAdmin by remember { mutableStateOf("") }
     var chatMessages by remember { mutableStateOf(listOf<ChatMessage>()) }
     var chatInput by remember { mutableStateOf("") }
     
-    val isUserAdmin = currentAdmin == username
+    val isUserAdmin = remember(currentAdmin, username) { currentAdmin == username }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
@@ -75,9 +75,12 @@ fun GameScreen(
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
-                val status = snapshot.child("status").getValue(String::class.java)
-                currentAdmin = snapshot.child("admin").getValue(String::class.java) ?: ""
                 
+                snapshot.child("admin").getValue(String::class.java)?.let {
+                    currentAdmin = it
+                }
+                
+                val status = snapshot.child("status").getValue(String::class.java)
                 if (status == "waiting") {
                     onRepeat()
                 }
@@ -304,9 +307,4 @@ fun GameScreen(
             }
         }
     }
-}
-
-@Composable
-fun rememberMutableFloatStateOf(initialValue: Float): MutableState<Float> {
-    return remember { mutableFloatStateOf(initialValue) }
 }

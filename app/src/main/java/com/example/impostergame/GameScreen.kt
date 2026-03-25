@@ -8,7 +8,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -71,6 +70,7 @@ fun GameScreen(
     var gameStatus by remember { mutableStateOf("started") }
     var resultMessage by remember { mutableStateOf("") }
     var imposterId by remember { mutableStateOf("") }
+    var mrWhiteId by remember { mutableStateOf("") }
     var showVoteDialog by remember { mutableStateOf(false) }
     
     var isDiscussionActive by remember { mutableStateOf(false) }
@@ -99,12 +99,15 @@ fun GameScreen(
                 gameStatus = snapshot.child("status").getValue(String::class.java) ?: "started"
                 resultMessage = snapshot.child("resultMessage").getValue(String::class.java) ?: ""
                 imposterId = snapshot.child("imposterId").getValue(String::class.java) ?: ""
+                mrWhiteId = snapshot.child("mrWhiteId").getValue(String::class.java) ?: ""
                 if (gameStatus == "waiting") onRepeat()
-                word = if (imposterId == username) {
-                    snapshot.child("imposterWord").getValue(String::class.java) ?: ""
-                } else {
-                    snapshot.child("mainWord").getValue(String::class.java) ?: ""
+                
+                word = when (username) {
+                    mrWhiteId -> "TI SI MR. WHITE"
+                    imposterId -> snapshot.child("imposterWord").getValue(String::class.java) ?: ""
+                    else -> snapshot.child("mainWord").getValue(String::class.java) ?: ""
                 }
+
                 val chatList = mutableListOf<ChatMessage>()
                 snapshot.child("chatMessages").children.forEach {
                     it.getValue(ChatMessage::class.java)?.let { msg -> chatList.add(msg) }
@@ -185,18 +188,29 @@ fun GameScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
-                    Text("TKO JE IMPOSTER?", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MutedRose)
+                    Text("TKO JE ULJEZ?", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MutedRose)
                     Spacer(Modifier.height(16.dp))
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         val playerList = players.keys.toList()
-                        items(playerList) { pId ->
+                        itemsIndexed(playerList) { _, pId ->
                             val playerName = players[pId]?.name ?: pId
                             Surface(
                                 onClick = {
-                                    val isCorrect = pId == imposterId
+                                    val isImposter = pId == imposterId
+                                    val isMrWhite = pId == mrWhiteId
+                                    
                                     val imposterName = players[imposterId]?.name ?: "Imposter"
-                                    val msg = if (isCorrect) "Pronašli ste Impostera! $playerName je bio on. Većina pobjeđuje! 🏆"
-                                    else "Izbacili ste nevinu osobu! Imposter $imposterName pobjeđuje! 🎭"
+                                    val mrWhiteName = players[mrWhiteId]?.name ?: "Mr. White"
+                                    
+                                    val msg = when {
+                                        isImposter -> "Pronašli ste Impostera! $playerName je bio on. Većina pobjeđuje! 🏆"
+                                        isMrWhite -> "Pronašli ste Mr. White-a! $playerName nije imao riječ. Većina pobjeđuje! 🏆"
+                                        else -> {
+                                            val roles = if (mrWhiteId.isNotBlank()) "Imposter je bio $imposterName, a Mr. White $mrWhiteName." else "Imposter je bio $imposterName."
+                                            "Izbacili ste nevinu osobu! Uljezi pobjeđuju! 🎭\n$roles"
+                                        }
+                                    }
+                                    
                                     database.updateChildren(mapOf("status" to "finished", "resultMessage" to msg, "isDiscussionActive" to false))
                                     showVoteDialog = false
                                 },
@@ -247,8 +261,8 @@ fun GameScreen(
                 Box(modifier = Modifier.fillMaxSize().clickable { isRevealed = !isRevealed }, contentAlignment = Alignment.Center) {
                     if (isRevealed) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Tvoja riječ:", color = textColor.copy(alpha = 0.6f), fontSize = 14.sp)
-                            Text(word, color = textColor, fontSize = 42.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(if (username == mrWhiteId) "Tvoj status:" else "Tvoja riječ:", color = textColor.copy(alpha = 0.6f), fontSize = 14.sp)
+                            Text(word, color = if (username == mrWhiteId) MutedRose else textColor, fontSize = if (username == mrWhiteId) 32.sp else 42.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
                         }
                     } else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -358,7 +372,7 @@ fun GameScreen(
                 ) {
                     Icon(Icons.Default.Gavel, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("IZBACI IMPOSTERA", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+                    Text("IZBACI ULJEZA", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))

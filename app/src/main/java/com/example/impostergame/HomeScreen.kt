@@ -128,7 +128,7 @@ fun RulesContent(textColor: Color) {
             .padding(bottom = 32.dp)
     ) {
         Text(
-            text = "🕵️ Kako igrati?",
+            text = "Kako igrati?",
             fontSize = 28.sp,
             fontWeight = FontWeight.ExtraBold,
             color = textColor,
@@ -143,7 +143,7 @@ fun RulesContent(textColor: Color) {
         
         RuleSection(
             "2. Opisivanje", 
-            "Svaki igrač u krugu kaže točno JEDNU riječ (asocijaciju) koja opisuje njegov pojam.\n\nSavjet: Budi dovoljno jasan ekipi, ali dovoljno nejasan Imposteru!", 
+            "Svaki igrač u krugu kaže točno JEDNU riječ (asocijaciju) koja opisuje njegov pojam.\n\n",
             textColor
         )
         

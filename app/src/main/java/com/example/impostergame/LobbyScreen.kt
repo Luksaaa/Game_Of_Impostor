@@ -21,6 +21,7 @@ import com.example.impostergame.ui.components.QRCodeImage
 import com.example.impostergame.ui.theme.*
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -208,13 +209,20 @@ fun LobbyScreen(
                         onClick = {
                             val (mainWord, imposterWord) = WordManager.getNextWords()
                             database.get().addOnSuccessListener { snapshot ->
-                                val players = snapshot.child("players").children.map { it.key!! }
-                                if (players.isNotEmpty()) {
-                                    val imposter = players.random()
+                                val playersList = snapshot.child("players").children.map { it.key!! }.shuffled()
+                                if (playersList.size >= 2) {
+                                    val imposterId = playersList[0]
+                                    
+                                    // 20% šansa za Mr. White-a (ako ima barem 3 igrača za bolju zabavu)
+                                    val mrWhiteId = if (playersList.size >= 3 && (1..100).random() <= 20) {
+                                        playersList[1]
+                                    } else ""
+
                                     val updates = mapOf(
                                         "mainWord" to mainWord,
                                         "imposterWord" to imposterWord,
-                                        "imposterId" to imposter,
+                                        "imposterId" to imposterId,
+                                        "mrWhiteId" to mrWhiteId,
                                         "status" to "started"
                                     )
                                     database.updateChildren(updates)

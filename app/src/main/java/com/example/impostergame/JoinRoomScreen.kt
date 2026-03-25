@@ -30,9 +30,14 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
     var inputCode by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     val isDarkTheme = isSystemInDarkTheme()
-    val textColor = if (isDarkTheme) Color.White else Color.Black
+    val textColor = if (isDarkTheme) OffWhite else DeepCharcoal
     val inputContainerColor = if (isDarkTheme) DarkInputGray else Color.White
     
+    // Adaptivne krem boje za gumb (kao na ostalim ekranima)
+    val joinBtnBg = if (isDarkTheme) Color(0xFF3E3A33) else Color(0xFFFDF5E6)
+    val joinBtnText = if (isDarkTheme) Color(0xFFFDF5E6) else Color(0xFF2D2D2D)
+    val accentColor = MutedRose
+
     val context = LocalContext.current
     val database = Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/").getReference("rooms")
 
@@ -91,7 +96,7 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         isError = errorMessage.isNotEmpty(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PurpleGradient,
+                            focusedBorderColor = accentColor,
                             unfocusedBorderColor = textColor.copy(alpha = 0.2f),
                             focusedTextColor = textColor,
                             unfocusedTextColor = textColor
@@ -137,25 +142,16 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        contentPadding = PaddingValues()
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (inputCode.length == 6) accentColor else accentColor.copy(alpha = 0.5f),
+                            contentColor = Color.White
+                        )
                     ) {
-                        Box(
-                            modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        brush = androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(PurpleGradient, BlueGradient)),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("PRIDRUŽI SE", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
+                        Text("PRIDRUŽI SE", fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Gumb s ikonom kamere - Otvara sistemsku kameru neovisno
                     IconButton(
                         onClick = {
                             try {
@@ -172,7 +168,7 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
                         Icon(
                             imageVector = Icons.Default.CameraAlt,
                             contentDescription = "Camera",
-                            tint = BlueGradient,
+                            tint = accentColor,
                             modifier = Modifier.size(32.dp)
                         )
                     }

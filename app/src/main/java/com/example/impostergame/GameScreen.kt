@@ -9,6 +9,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -110,7 +111,7 @@ fun GameScreen(
                 val playersMap = mutableMapOf<String, PlayerInfo>()
                 snapshot.child("players").children.forEach {
                     val pInfo = it.getValue(PlayerInfo::class.java)
-                    if (pInfo != null) playersMap[it.key!!] = pInfo
+                    if (pInfo != null && it.key != null) playersMap[it.key!!] = pInfo
                 }
                 players = playersMap
                 isDiscussionActive = snapshot.child("isDiscussionActive").getValue(Boolean::class.java) ?: false
@@ -142,7 +143,6 @@ fun GameScreen(
         if (chatMessages.isNotEmpty()) listState.animateScrollToItem(chatMessages.size - 1)
     }
 
-    // DIJALOG ZA REZULTATE
     if (gameStatus == "finished") {
         Dialog(onDismissRequest = {}) {
             Card(
@@ -173,9 +173,9 @@ fun GameScreen(
         }
     }
 
-    // DIJALOG ZA GLASANJE (Samo Admin)
     if (showVoteDialog) {
         Dialog(onDismissRequest = { showVoteDialog = false }) {
+            val playerList = remember(players) { players.keys.toList() }
             Card(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                 shape = RoundedCornerShape(28.dp),
@@ -186,7 +186,7 @@ fun GameScreen(
                     Text("TKO JE IMPOSTER?", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MutedRose)
                     Spacer(Modifier.height(16.dp))
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(players.keys.toList()) { pId ->
+                        items(playerList) { pId ->
                             val playerName = players[pId]?.name ?: pId
                             Surface(
                                 onClick = {
@@ -203,7 +203,7 @@ fun GameScreen(
                             ) {
                                 Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Box(modifier = Modifier.size(32.dp).background(accentColor.copy(0.2f), CircleShape), contentAlignment = Alignment.Center) {
-                                        Text(playerName.take(1).uppercase(), fontWeight = FontWeight.Bold, color = accentColor, fontSize = 14.sp)
+                                        Text(playerName.firstOrNull()?.toString()?.uppercase() ?: "?", fontWeight = FontWeight.Bold, color = accentColor, fontSize = 14.sp)
                                     }
                                     Spacer(Modifier.width(12.dp))
                                     Text(playerName, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = textColor)
@@ -224,7 +224,6 @@ fun GameScreen(
         modifier = Modifier.fillMaxSize().padding(16.dp).statusBarsPadding().navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Kartica s riječi
         Card(
             modifier = Modifier.fillMaxWidth().height(160.dp),
             shape = RoundedCornerShape(32.dp),
@@ -261,7 +260,6 @@ fun GameScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Chat sekcija
         Card(modifier = Modifier.fillMaxWidth().weight(1f), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = containerColor.copy(alpha = 0.5f))) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -282,11 +280,29 @@ fun GameScreen(
                     }
                 }
                 LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(vertical = 8.dp)) {
-                    items(chatMessages) { msg ->
+                    itemsIndexed(chatMessages) { index, msg ->
                         val isMe = msg.sender == username
-                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalAlignment = if (isMe) Alignment.End else Alignment.Start) {
-                            if (!isMe) Text(msg.sender, fontSize = 11.sp, color = textColor.copy(alpha = 0.5f))
-                            Surface(color = if (isMe) accentColor.copy(alpha = if(isDarkTheme) 0.2f else 0.8f) else (if (isDarkTheme) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.05f)), shape = RoundedCornerShape(16.dp), contentColor = if (isMe && !isDarkTheme) Color.White else textColor) {
+                        val prevMsg = if (index > 0) chatMessages[index - 1] else null
+                        val isNewGroup = prevMsg == null || prevMsg.sender != msg.sender
+                        
+                        val showName = !isMe && isNewGroup
+                        val verticalPadding = if (isNewGroup) 6.dp else 2.dp
+
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = verticalPadding), horizontalAlignment = if (isMe) Alignment.End else Alignment.Start) {
+                            if (showName) {
+                                Text(msg.sender, fontSize = 11.sp, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+                            }
+                            Surface(
+                                color = if (isMe) accentColor.copy(alpha = if(isDarkTheme) 0.25f else 0.85f) 
+                                        else (if (isDarkTheme) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.05f)), 
+                                shape = RoundedCornerShape(
+                                    topStart = if (showName || isMe) 16.dp else 4.dp, 
+                                    topEnd = 16.dp, 
+                                    bottomStart = if (isMe) 16.dp else 4.dp, 
+                                    bottomEnd = if (isMe) 4.dp else 16.dp
+                                ), 
+                                contentColor = if (isMe && !isDarkTheme) Color.White else textColor
+                            ) {
                                 Text(msg.message, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), fontSize = 15.sp)
                             }
                         }
@@ -302,7 +318,6 @@ fun GameScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ADMIN CONTROL PANEL
         if (isUserAdmin && !isDiscussionActive) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(
@@ -344,7 +359,6 @@ fun GameScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        // IZAĐI GUMB
         Button(
             onClick = { FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onNewGame) }, 
             modifier = Modifier.fillMaxWidth().height(50.dp), 

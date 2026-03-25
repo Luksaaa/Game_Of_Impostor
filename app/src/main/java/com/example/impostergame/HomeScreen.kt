@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,7 +25,7 @@ import com.example.impostergame.ui.theme.*
 @Composable
 fun HomeScreen(username: String, onCreateRoom: () -> Unit, onJoinRoom: () -> Unit) {
     val isDarkTheme = isSystemInDarkTheme()
-    val textColor = if (isDarkTheme) Color.White else Color.Black
+    val textColor = if (isDarkTheme) OffWhite else DeepCharcoal
     
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
@@ -43,33 +43,37 @@ fun HomeScreen(username: String, onCreateRoom: () -> Unit, onJoinRoom: () -> Uni
 
         Text(
             text = "Bok, $username!",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = textColor
+            fontSize = 32.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = textColor,
+            letterSpacing = (-0.5).sp
         )
         
         Text(
-            text = "Spreman za igru?",
+            text = "Spreman za novu rundu?",
             fontSize = 16.sp,
-            color = textColor.copy(alpha = 0.6f)
+            color = textColor.copy(alpha = 0.6f),
+            fontWeight = FontWeight.Medium
         )
 
         Spacer(modifier = Modifier.height(screenHeight * 0.08f))
 
-        MenuButton(
+        AestheticButton(
             text = "Napravi sobu",
+            subText = "Postani admin i započni igru",
             icon = Icons.Default.Add,
             onClick = onCreateRoom,
-            gradient = listOf(BlueGradient, BlueGradient.copy(alpha = 0.7f))
+            color = SageGreen
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        MenuButton(
+        AestheticButton(
             text = "Pridruži se",
-            icon = Icons.Default.Person,
+            subText = "Uđi u postojeću sobu",
+            icon = Icons.Default.Group,
             onClick = onJoinRoom,
-            gradient = listOf(PurpleGradient, PurpleGradient.copy(alpha = 0.7f))
+            color = MutedRose
         )
         
         Spacer(modifier = Modifier.height(screenHeight * 0.05f))
@@ -77,36 +81,56 @@ fun HomeScreen(username: String, onCreateRoom: () -> Unit, onJoinRoom: () -> Uni
 }
 
 @Composable
-fun MenuButton(
+fun AestheticButton(
     text: String,
+    subText: String,
     icon: ImageVector,
     onClick: () -> Unit,
-    gradient: List<Color>
+    color: Color
 ) {
+    val isDarkTheme = isSystemInDarkTheme()
+    
     Button(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-        contentPadding = PaddingValues()
+            .height(100.dp),
+        shape = RoundedCornerShape(28.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = color.copy(alpha = if (isDarkTheme) 0.15f else 0.9f),
+            contentColor = if (isDarkTheme) color else Color.White
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = if (isDarkTheme) 0.dp else 4.dp),
+        contentPadding = PaddingValues(horizontal = 24.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.horizontalGradient(gradient), RoundedCornerShape(20.dp))
-                .padding(horizontal = 24.dp),
-            contentAlignment = Alignment.CenterStart
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(imageVector = icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
-                Spacer(modifier = Modifier.width(16.dp))
+            Surface(
+                modifier = Modifier.size(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = if (isDarkTheme) color.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.2f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(28.dp))
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(20.dp))
+            
+            Column {
                 Text(
-                    text = text,
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    text = text.uppercase(),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    text = subText,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = (if (isDarkTheme) color else Color.White).copy(alpha = 0.7f)
                 )
             }
         }

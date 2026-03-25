@@ -1,9 +1,6 @@
 package com.example.impostergame
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -22,11 +19,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.impostergame.ui.theme.*
@@ -50,10 +45,7 @@ fun GameScreen(
 ) {
     if (roomCode.isBlank()) return
 
-    // Blokiramo povratak (gestu ili gumb) kako korisnik ne bi slučajno izašao
-    BackHandler(enabled = true) {
-        // Prazno - korisnik mora kliknuti na gumb "IZAĐI IZ SOBE"
-    }
+    BackHandler(enabled = true) { }
 
     val database = remember(roomCode) { 
         Firebase.database("https://gameofimpostor-default-rtdb.europe-west1.firebasedatabase.app/")
@@ -62,8 +54,7 @@ fun GameScreen(
     
     var word by remember { mutableStateOf("") }
     var isRevealed by remember { mutableStateOf(false) }
-    var showHoldMessage by remember { mutableStateOf(false) }
-    var holdProgress by remember { mutableStateOf(0f) }
+    var holdProgress by rememberMutableFloatStateOf(0f)
     var currentAdmin by remember { mutableStateOf("") }
     var chatMessages by remember { mutableStateOf(listOf<ChatMessage>()) }
     var chatInput by remember { mutableStateOf("") }
@@ -73,13 +64,12 @@ fun GameScreen(
     val listState = rememberLazyListState()
 
     val isDarkTheme = isSystemInDarkTheme()
-    val textColor = if (isDarkTheme) Color.White else Color.Black
+    val textColor = if (isDarkTheme) OffWhite else DeepCharcoal
     val containerColor = if (isDarkTheme) DarkInputGray else Color.White
     
-    // Adaptivne krem boje
     val repeatButtonBg = if (isDarkTheme) Color(0xFF3E3A33) else Color(0xFFFDF5E6)
-    val repeatButtonProgress = if (isDarkTheme) Color(0xFF5D564B) else Color(0xFFF5DEB3)
-    val repeatButtonText = if (isDarkTheme) Color(0xFFFDF5E6) else Color(0xFF2D2D2D)
+    val repeatButtonProgress = if (isDarkTheme) SageGreen.copy(alpha = 0.3f) else SageGreen.copy(alpha = 0.2f)
+    val accentColor = SageGreen
 
     DisposableEffect(roomCode) {
         val listener = object : ValueEventListener {
@@ -129,7 +119,6 @@ fun GameScreen(
             .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Kartica s riječi
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -151,7 +140,7 @@ fun GameScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Visibility, 
-                            tint = PurpleGradient,
+                            tint = accentColor,
                             contentDescription = null,
                             modifier = Modifier.size(32.dp)
                         )
@@ -164,14 +153,13 @@ fun GameScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Chat sekcija
         Card(
             modifier = Modifier.fillMaxWidth().weight(1f),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = containerColor.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text("Chat", fontWeight = FontWeight.Bold, color = BlueGradient, fontSize = 18.sp)
+                Text("Chat", fontWeight = FontWeight.Bold, color = accentColor, fontSize = 18.sp)
                 LazyColumn(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     state = listState,
@@ -192,18 +180,19 @@ fun GameScreen(
                                 )
                             }
                             Surface(
-                                color = if (isMe) BlueGradient else (if (isDarkTheme) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.05f)),
+                                color = if (isMe) accentColor.copy(alpha = if(isDarkTheme) 0.2f else 0.8f) 
+                                        else (if (isDarkTheme) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.05f)),
                                 shape = RoundedCornerShape(
                                     topStart = 16.dp, 
                                     topEnd = 16.dp, 
                                     bottomStart = if (isMe) 16.dp else 4.dp, 
                                     bottomEnd = if (isMe) 4.dp else 16.dp
-                                )
+                                ),
+                                contentColor = if (isMe && !isDarkTheme) Color.White else textColor
                             ) {
                                 Text(
                                     msg.message,
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                    color = if (isMe) Color.White else textColor,
                                     fontSize = 15.sp
                                 )
                             }
@@ -221,8 +210,8 @@ fun GameScreen(
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Napiši nešto...", fontSize = 14.sp) },
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = if (isDarkTheme) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f),
-                            unfocusedContainerColor = if (isDarkTheme) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f),
+                            focusedContainerColor = textColor.copy(alpha = 0.05f),
+                            unfocusedContainerColor = textColor.copy(alpha = 0.05f),
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
@@ -239,7 +228,7 @@ fun GameScreen(
                                 chatInput = ""
                             }
                         },
-                        modifier = Modifier.background(BlueGradient, CircleShape).size(48.dp)
+                        modifier = Modifier.background(accentColor, CircleShape).size(48.dp)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send, 
@@ -254,7 +243,6 @@ fun GameScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Kontrole
         Column(modifier = Modifier.fillMaxWidth()) {
             if (isUserAdmin) {
                 var holdJob by remember { mutableStateOf<Job?>(null) }
@@ -264,15 +252,10 @@ fun GameScreen(
                         .fillMaxWidth()
                         .height(60.dp)
                         .clip(RoundedCornerShape(20.dp))
-                        .background(repeatButtonBg) // Adaptivna krem pozadina
+                        .background(repeatButtonBg)
                         .pointerInput(Unit) {
                             detectTapGestures(
-                                onTap = {
-                                    showHoldMessage = true
-                                    scope.launch { delay(2000); if (holdProgress == 0f) showHoldMessage = false }
-                                },
                                 onPress = {
-                                    showHoldMessage = true
                                     holdJob = scope.launch {
                                         val startTime = System.currentTimeMillis()
                                         while (holdProgress < 2f) {
@@ -289,7 +272,6 @@ fun GameScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    // Adaptivni krem progress fill
                     if (holdProgress > 0f) {
                         Box(
                             modifier = Modifier
@@ -302,7 +284,7 @@ fun GameScreen(
 
                     Text(
                         text = if (holdProgress > 0f) String.format(Locale.US, "%.1fs", 2f - holdProgress) else "PONOVI IGRU",
-                        color = repeatButtonText,
+                        color = textColor,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp
                     )
@@ -322,4 +304,9 @@ fun GameScreen(
             }
         }
     }
+}
+
+@Composable
+fun rememberMutableFloatStateOf(initialValue: Float): MutableState<Float> {
+    return remember { mutableFloatStateOf(initialValue) }
 }

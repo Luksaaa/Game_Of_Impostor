@@ -12,7 +12,7 @@ enum class Screen {
 
 data class Room(
     val admin: String = "",
-    val status: String = "waiting", // waiting, started
+    val status: String = "waiting", // waiting, started, finished
     val players: Map<String, PlayerInfo> = emptyMap(),
     val mainWord: String = "",
     val imposterWord: String = "",
@@ -20,7 +20,9 @@ data class Room(
     val messages: List<String> = emptyList(),
     val chatMessages: List<ChatMessage> = emptyList(),
     val discussionEndTime: Long = 0L,
-    val isDiscussionActive: Boolean = false
+    val isDiscussionActive: Boolean = false,
+    val votedPlayerId: String = "",
+    val resultMessage: String = ""
 )
 
 data class PlayerInfo(

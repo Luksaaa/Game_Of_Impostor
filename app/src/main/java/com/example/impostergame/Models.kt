@@ -26,30 +26,45 @@ data class PlayerInfo(
 )
 
 object WordManager {
-    private var words: List<String> = emptyList()
+    private var wordPairs: List<Pair<String, String>> = emptyList()
 
     fun loadWords(context: Context) {
-        if (words.isNotEmpty()) return
+        if (wordPairs.isNotEmpty()) return
         try {
             // Otvaramo sirovu datoteku (res/raw/hrvatski_rijecnik.txt)
             val inputStream = context.resources.openRawResource(R.raw.hrvatski_rijecnik)
-            words = inputStream.bufferedReader().useLines { lines ->
+            wordPairs = inputStream.bufferedReader().useLines { lines ->
                 lines.filter { line ->
-                    line.isNotBlank() && !line.startsWith("Slovo ")
-                }.map { it.trim() }.toList()
+                    line.contains("/") && !line.trim().startsWith("(")
+                }.mapNotNull { line ->
+                    val parts = line.split("/")
+                    if (parts.size >= 2) {
+                        parts[0].trim() to parts[1].trim()
+                    } else null
+                }.toList()
             }
         } catch (e: Exception) {
             // Fallback ako dođe do greške
-            words = listOf("Jabuka", "Kruška", "Automobil", "Zagreb", "More", "Sunce", "Knjiga")
+            wordPairs = listOf(
+                "Jabuka" to "Kruška",
+                "Automobil" to "Motor",
+                "Zagreb" to "Split",
+                "Sunce" to "Mjesec"
+            )
         }
     }
 
-    fun getRandomWord(): String {
-        return if (words.isNotEmpty()) words.random() else "Jabuka"
+    fun getNextWords(): Pair<String, String> {
+        if (wordPairs.isEmpty()) return "Jabuka" to "Kruška"
+        val pair = wordPairs.random()
+        return if ((0..1).random() == 0) {
+            pair.first to pair.second
+        } else {
+            pair.second to pair.first
+        }
     }
 
-    fun getRandomImposterWord(exclude: String): String {
-        val filtered = words.filter { it != exclude }
-        return if (filtered.isNotEmpty()) filtered.random() else "Kruška"
-    }
+    // Zadržavamo stare metode radi kompatibilnosti, ali ih možemo i ukloniti ako ažuriramo LobbyScreen
+    fun getRandomWord(): String = getNextWords().first
+    fun getRandomImposterWord(exclude: String): String = "Kruška" // Ova metoda više nema smisla u novom sustavu
 }

@@ -1,6 +1,7 @@
 package com.example.impostergame
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -13,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.impostergame.ui.theme.*
@@ -59,6 +62,11 @@ fun GameScreen(
     var chatMessages by remember { mutableStateOf(listOf<ChatMessage>()) }
     var chatInput by remember { mutableStateOf("") }
     
+    // Timer i rasprava stanja
+    var isDiscussionActive by remember { mutableStateOf(false) }
+    var discussionEndTime by remember { mutableLongStateOf(0L) }
+    var timeLeft by remember { mutableIntStateOf(0) }
+    
     val isUserAdmin = remember(currentAdmin, username) { currentAdmin == username }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -76,14 +84,10 @@ fun GameScreen(
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
                 
-                snapshot.child("admin").getValue(String::class.java)?.let {
-                    currentAdmin = it
-                }
+                currentAdmin = snapshot.child("admin").getValue(String::class.java) ?: ""
                 
                 val status = snapshot.child("status").getValue(String::class.java)
-                if (status == "waiting") {
-                    onRepeat()
-                }
+                if (status == "waiting") onRepeat()
 
                 val imposterId = snapshot.child("imposterId").getValue(String::class.java)
                 word = if (imposterId == username) {
@@ -97,14 +101,35 @@ fun GameScreen(
                     it.getValue(ChatMessage::class.java)?.let { msg -> chatList.add(msg) }
                 }
                 chatMessages = chatList
+                
+                // Timer podaci
+                isDiscussionActive = snapshot.child("isDiscussionActive").getValue(Boolean::class.java) ?: false
+                discussionEndTime = snapshot.child("discussionEndTime").getValue(Long::class.java) ?: 0L
             }
             override fun onCancelled(error: DatabaseError) {}
         }
-        
         database.addValueEventListener(listener)
-        
-        onDispose {
-            database.removeEventListener(listener)
+        onDispose { database.removeEventListener(listener) }
+    }
+
+    // Timer logika na klijentu
+    LaunchedEffect(isDiscussionActive, discussionEndTime) {
+        if (isDiscussionActive && discussionEndTime > 0L) {
+            while (true) {
+                val now = System.currentTimeMillis()
+                val diff = ((discussionEndTime - now) / 1000).toInt()
+                if (diff <= 0) {
+                    timeLeft = 0
+                    if (isUserAdmin) {
+                        database.child("isDiscussionActive").setValue(false)
+                    }
+                    break
+                }
+                timeLeft = diff
+                delay(1000)
+            }
+        } else {
+            timeLeft = 0
         }
     }
 
@@ -122,6 +147,7 @@ fun GameScreen(
             .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Tajna riječ i Timer
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -130,25 +156,43 @@ fun GameScreen(
             colors = CardDefaults.cardColors(containerColor = containerColor.copy(alpha = 0.9f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize().clickable { isRevealed = !isRevealed },
-                contentAlignment = Alignment.Center
-            ) {
-                if (isRevealed) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Tvoja riječ:", color = textColor.copy(alpha = 0.6f), fontSize = 14.sp)
-                        Text(word, color = textColor, fontSize = 42.sp, fontWeight = FontWeight.ExtraBold)
-                    }
-                } else {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Visibility, 
-                            tint = accentColor,
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp)
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Timer prikaz u kutu ako je aktivan
+                if (isDiscussionActive) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp)
+                            .background(MutedRose.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Timer, contentDescription = null, tint = MutedRose, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = String.format("%02d:%02d", timeLeft / 60, timeLeft % 60),
+                            color = MutedRose,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
                         )
-                        Spacer(Modifier.width(12.dp))
-                        Text("DODIRNI ZA OTKRIVANJE", color = textColor.copy(alpha = 0.5f), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
+                }
+
+                Box(
+                    modifier = Modifier.fillMaxSize().clickable { isRevealed = !isRevealed },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isRevealed) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Tvoja riječ:", color = textColor.copy(alpha = 0.6f), fontSize = 14.sp)
+                            Text(word, color = textColor, fontSize = 42.sp, fontWeight = FontWeight.ExtraBold)
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Visibility, tint = accentColor, contentDescription = null, modifier = Modifier.size(32.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text("DODIRNI ZA OTKRIVANJE", color = textColor.copy(alpha = 0.5f), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
                     }
                 }
             }
@@ -156,89 +200,75 @@ fun GameScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Rasprava / Chat sekcija
         Card(
             modifier = Modifier.fillMaxWidth().weight(1f),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = containerColor.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text("Chat", fontWeight = FontWeight.Bold, color = accentColor, fontSize = 18.sp)
-                LazyColumn(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    state = listState,
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    items(chatMessages) { msg ->
-                        val isMe = msg.sender == username
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            horizontalAlignment = if (isMe) Alignment.End else Alignment.Start
-                        ) {
-                            if (!isMe) {
-                                Text(
-                                    msg.sender, 
-                                    fontSize = 11.sp, 
-                                    color = textColor.copy(alpha = 0.5f),
-                                    modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
-                                )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (isDiscussionActive) "RASPRAVA U TIJEKU" else "CHAT", fontWeight = FontWeight.Bold, color = if (isDiscussionActive) MutedRose else accentColor, fontSize = 16.sp)
+                    if (isUserAdmin && !isDiscussionActive) {
+                        var showTimerMenu by remember { mutableStateOf(false) }
+                        Box {
+                            TextButton(onClick = { showTimerMenu = true }) {
+                                Text("POKRENI RASPRAVU", color = accentColor, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
-                            Surface(
-                                color = if (isMe) accentColor.copy(alpha = if(isDarkTheme) 0.2f else 0.8f) 
-                                        else (if (isDarkTheme) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.05f)),
-                                shape = RoundedCornerShape(
-                                    topStart = 16.dp, 
-                                    topEnd = 16.dp, 
-                                    bottomStart = if (isMe) 16.dp else 4.dp, 
-                                    bottomEnd = if (isMe) 4.dp else 16.dp
-                                ),
-                                contentColor = if (isMe && !isDarkTheme) Color.White else textColor
-                            ) {
-                                Text(
-                                    msg.message,
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                    fontSize = 15.sp
-                                )
+                            DropdownMenu(expanded = showTimerMenu, onDismissRequest = { showTimerMenu = false }) {
+                                listOf(30, 45, 60).forEach { sec ->
+                                    DropdownMenuItem(
+                                        text = { Text("$sec sekundi") },
+                                        onClick = {
+                                            val endTime = System.currentTimeMillis() + (sec * 1000)
+                                            database.updateChildren(mapOf(
+                                                "isDiscussionActive" to true,
+                                                "discussionEndTime" to endTime
+                                            ))
+                                            showTimerMenu = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
                 
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(vertical = 8.dp)) {
+                    items(chatMessages) { msg ->
+                        val isMe = msg.sender == username
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalAlignment = if (isMe) Alignment.End else Alignment.Start) {
+                            if (!isMe) Text(msg.sender, fontSize = 11.sp, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+                            Surface(
+                                color = if (isMe) accentColor.copy(alpha = if(isDarkTheme) 0.2f else 0.8f) else (if (isDarkTheme) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.05f)),
+                                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = if (isMe) 16.dp else 4.dp, bottomEnd = if (isMe) 4.dp else 16.dp),
+                                contentColor = if (isMe && !isDarkTheme) Color.White else textColor
+                            ) {
+                                Text(msg.message, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), fontSize = 15.sp)
+                            }
+                        }
+                    }
+                }
+                
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     TextField(
                         value = chatInput,
                         onValueChange = { chatInput = it },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Napiši nešto...", fontSize = 14.sp) },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = textColor.copy(alpha = 0.05f),
-                            unfocusedContainerColor = textColor.copy(alpha = 0.05f),
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
+                        colors = TextFieldDefaults.colors(focusedContainerColor = textColor.copy(alpha = 0.05f), unfocusedContainerColor = textColor.copy(alpha = 0.05f), focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
                         maxLines = 2,
                         shape = RoundedCornerShape(24.dp)
                     )
                     Spacer(Modifier.width(8.dp))
-                    IconButton(
-                        onClick = {
-                            val trimmedMessage = chatInput.trim()
-                            if (trimmedMessage.isNotBlank()) {
-                                val newMessage = ChatMessage(sender = username, message = trimmedMessage)
-                                database.child("chatMessages").push().setValue(newMessage)
-                                chatInput = ""
-                            }
-                        },
-                        modifier = Modifier.background(accentColor, CircleShape).size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send, 
-                            contentDescription = "Pošalji", 
-                            tint = Color.White, 
-                            modifier = Modifier.size(20.dp)
-                        )
+                    IconButton(onClick = {
+                        val trimmedMessage = chatInput.trim()
+                        if (trimmedMessage.isNotBlank()) {
+                            database.child("chatMessages").push().setValue(ChatMessage(sender = username, message = trimmedMessage))
+                            chatInput = ""
+                        }
+                    }, modifier = Modifier.background(accentColor, CircleShape).size(48.dp)) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Pošalji", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -246,10 +276,10 @@ fun GameScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // Donji gumbi (samo admin)
         Column(modifier = Modifier.fillMaxWidth()) {
             if (isUserAdmin) {
                 var holdJob by remember { mutableStateOf<Job?>(null) }
-                
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -265,8 +295,12 @@ fun GameScreen(
                                             holdProgress = ((System.currentTimeMillis() - startTime) / 1000f).coerceAtMost(2f)
                                             delay(10)
                                         }
-                                        database.child("status").setValue("waiting")
-                                        database.child("chatMessages").removeValue()
+                                        database.updateChildren(mapOf(
+                                            "status" to "waiting",
+                                            "chatMessages" to null,
+                                            "isDiscussionActive" to false,
+                                            "discussionEndTime" to 0L
+                                        ))
                                         holdProgress = 0f
                                     }
                                     try { awaitRelease() } finally { holdJob?.cancel(); holdProgress = 0f }
@@ -276,33 +310,13 @@ fun GameScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     if (holdProgress > 0f) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(holdProgress / 2f)
-                                .fillMaxHeight()
-                                .background(repeatButtonProgress)
-                                .align(Alignment.CenterStart)
-                        )
+                        Box(modifier = Modifier.fillMaxWidth(holdProgress / 2f).fillMaxHeight().background(repeatButtonProgress).align(Alignment.CenterStart))
                     }
-
-                    Text(
-                        text = if (holdProgress > 0f) String.format(Locale.US, "%.1fs", 2f - holdProgress) else "PONOVI IGRU",
-                        color = textColor,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 18.sp
-                    )
+                    Text(text = if (holdProgress > 0f) String.format(Locale.US, "%.1fs", 2f - holdProgress) else "PONOVI IGRU", color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                 }
             }
-
             Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = { FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onNewGame) },
-                modifier = Modifier.fillMaxWidth().height(60.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f)),
-                contentPadding = PaddingValues()
-            ) {
+            Button(onClick = { FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onNewGame) }, modifier = Modifier.fillMaxWidth().height(60.dp), shape = RoundedCornerShape(20.dp), colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f)), contentPadding = PaddingValues()) {
                 Text("IZAĐI IZ SOBE", color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
             }
         }

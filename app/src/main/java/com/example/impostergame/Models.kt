@@ -18,7 +18,9 @@ data class Room(
     val imposterWord: String = "",
     val imposterId: String = "",
     val messages: List<String> = emptyList(),
-    val chatMessages: List<ChatMessage> = emptyList()
+    val chatMessages: List<ChatMessage> = emptyList(),
+    val discussionEndTime: Long = 0L,
+    val isDiscussionActive: Boolean = false
 )
 
 data class PlayerInfo(

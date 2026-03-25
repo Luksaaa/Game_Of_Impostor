@@ -157,8 +157,8 @@ fun GameScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    val color = if (resultMessage.contains("🏆")) accentColor else MutedRose
-                    Text("KRAJ RUNDE", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = color)
+                    val resColor = if (resultMessage.contains("🏆")) accentColor else MutedRose
+                    Text("KRAJ RUNDE", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = resColor)
                     Spacer(Modifier.height(16.dp))
                     Text(resultMessage, textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = textColor, lineHeight = 28.sp)
                     Spacer(Modifier.height(24.dp))

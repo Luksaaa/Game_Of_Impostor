@@ -35,7 +35,6 @@ fun HomeScreen(username: String, onCreateRoom: () -> Unit, onJoinRoom: () -> Uni
 
     Box(modifier = Modifier.fillMaxSize()) {
         
-        // Sadržaj ekrana
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -83,7 +82,6 @@ fun HomeScreen(username: String, onCreateRoom: () -> Unit, onJoinRoom: () -> Uni
             Spacer(modifier = Modifier.height(screenHeight * 0.05f))
         }
 
-        // INFO GUMB
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -125,30 +123,55 @@ fun RulesContent(textColor: Color) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.8f)
+            .fillMaxHeight(0.85f)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
             .padding(bottom = 32.dp)
     ) {
         Text(
-            text = "Kako igrati?",
+            text = "🕵️ Kako igrati?",
             fontSize = 28.sp,
             fontWeight = FontWeight.ExtraBold,
             color = textColor,
             modifier = Modifier.padding(vertical = 16.dp)
         )
 
-        RuleSection("1. Dodjela uloga", "Svi dobivaju tajnu riječ. Većina istu, Imposter sličnu.", textColor)
-        RuleSection("2. Opisivanje", "Svaki igrač kaže JEDNU riječ koja opisuje pojam.", textColor)
-        RuleSection("3. Zabrana", "Ne smiješ reći samu tajnu riječ ni njezine korijene.", textColor, isWarning = true)
-        RuleSection("4. Glasanje", "Nakon rasprave, svi prstom upiru u sumnjivca. Većina pobjeđuje!", textColor)
+        RuleSection(
+            "1. Dodjela uloga", 
+            "Svi igrači dobivaju tajnu riječ. Većina dobiva istu, dok Imposter dobiva sličan pojam koji ga može zbuniti.", 
+            textColor
+        )
+        
+        RuleSection(
+            "2. Opisivanje", 
+            "Svaki igrač u krugu kaže točno JEDNU riječ (asocijaciju) koja opisuje njegov pojam.\n\nSavjet: Budi dovoljno jasan ekipi, ali dovoljno nejasan Imposteru!", 
+            textColor
+        )
+        
+        RuleSection(
+            "3. Zabranjene riječi", 
+            "Strogo je zabranjeno izgovoriti samu tajnu riječ, njezine korijene ili njezine prijevode na druge jezike.", 
+            textColor, 
+            isWarning = true
+        )
+        
+        RuleSection(
+            "4. Glasanje", 
+            "Nakon kratke rasprave, svi na signal prstom upiru u sumnjivca. Osoba s najviše glasova ispada.", 
+            textColor
+        )
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 20.dp), color = textColor.copy(alpha = 0.1f))
 
         Text("🏆 Cilj igre", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
+        Spacer(Modifier.height(8.dp))
         Text(
-            "Pronađi Impostera prije nego što blefiranjem prevari cijelu ekipu.",
-            fontSize = 15.sp, color = textColor.copy(alpha = 0.7f), modifier = Modifier.padding(top = 4.dp)
+            "Većina: Razotkriti Impostera prije nego što on shvati vašu riječ.",
+            fontSize = 15.sp, color = textColor.copy(alpha = 0.8f)
+        )
+        Text(
+            "Imposter: Preživjeti blefiranjem i uklopiti se u ekipu do samog kraja.",
+            fontSize = 15.sp, color = textColor.copy(alpha = 0.8f), modifier = Modifier.padding(top = 4.dp)
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -159,9 +182,18 @@ fun RulesContent(textColor: Color) {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("💡 Savjeti", fontWeight = FontWeight.Bold, color = SageGreen)
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    "• Ne budi previše očigledan.\n• Pažljivo slušaj druge.\n• Blefiraj do kraja!",
+                    "• Ne budi previše očigledan: Ako kažeš previše, Imposter će lako pogoditi vašu riječ i pobijediti.",
                     fontSize = 14.sp, color = textColor.copy(alpha = 0.8f)
+                )
+                Text(
+                    "• Pažljivo slušaj: Imposter često griješi u nijansama – prati tko se \"čudno\" nadovezuje.",
+                    fontSize = 14.sp, color = textColor.copy(alpha = 0.8f), modifier = Modifier.padding(top = 8.dp)
+                )
+                Text(
+                    "• Blefiraj do kraja: Čak i ako si otkriven, uvjeri ih da je netko drugi zapravo uljez!",
+                    fontSize = 14.sp, color = textColor.copy(alpha = 0.8f), modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
@@ -172,8 +204,9 @@ fun RulesContent(textColor: Color) {
 @Composable
 fun RuleSection(title: String, description: String, textColor: Color, isWarning: Boolean = false) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(title, fontWeight = FontWeight.Bold, color = if (isWarning) MutedRose else textColor)
-        Text(description, color = textColor.copy(alpha = 0.7f), fontSize = 15.sp)
+        Text(title, fontWeight = FontWeight.Bold, color = if (isWarning) MutedRose else textColor, fontSize = 17.sp)
+        Spacer(Modifier.height(4.dp))
+        Text(description, color = textColor.copy(alpha = 0.7f), fontSize = 15.sp, lineHeight = 20.sp)
     }
 }
 
@@ -188,9 +221,8 @@ fun AestheticButton(text: String, subText: String, icon: ImageVector, onClick: (
             containerColor = color.copy(alpha = if (isDarkTheme) 0.15f else 0.9f),
             contentColor = if (isDarkTheme) color else Color.White
         ),
-        contentPadding = PaddingValues(0.dp) // Uklanjamo defaultni padding gumba
+        contentPadding = PaddingValues(0.dp)
     ) {
-        // Koristimo Row s fiksnim paddingom da bi ikone bile savršeno poravnate s lijeve strane
         Row(
             verticalAlignment = Alignment.CenterVertically, 
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)

@@ -17,12 +17,19 @@ data class Room(
     val mainWord: String = "",
     val imposterWord: String = "",
     val imposterId: String = "",
-    val messages: List<String> = emptyList()
+    val messages: List<String> = emptyList(),
+    val chatMessages: List<ChatMessage> = emptyList()
 )
 
 data class PlayerInfo(
     val name: String = "",
     val isReady: Boolean = false
+)
+
+data class ChatMessage(
+    val sender: String = "",
+    val message: String = "",
+    val timestamp: Long = System.currentTimeMillis()
 )
 
 object WordManager {
@@ -64,7 +71,6 @@ object WordManager {
         }
     }
 
-    // Zadržavamo stare metode radi kompatibilnosti, ali ih možemo i ukloniti ako ažuriramo LobbyScreen
     fun getRandomWord(): String = getNextWords().first
-    fun getRandomImposterWord(exclude: String): String = "Kruška" // Ova metoda više nema smisla u novom sustavu
+    fun getRandomImposterWord(exclude: String): String = "Kruška"
 }

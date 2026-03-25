@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
@@ -21,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -60,7 +62,6 @@ fun GameScreen(
     
     var word by remember { mutableStateOf("") }
     var isRevealed by remember { mutableStateOf(false) }
-    var showAdminOnlyMessage by remember { mutableStateOf(false) }
     var showHoldMessage by remember { mutableStateOf(false) }
     var holdProgress by remember { mutableStateOf(0f) }
     var currentAdmin by remember { mutableStateOf("") }
@@ -74,6 +75,7 @@ fun GameScreen(
     val isDarkTheme = isSystemInDarkTheme()
     val textColor = if (isDarkTheme) Color.White else Color.Black
     val containerColor = if (isDarkTheme) DarkInputGray else Color.White
+    val creamyWhite = Color(0xFFFDF5E6) // Krem bijela (Old Lace)
 
     DisposableEffect(roomCode) {
         val listener = object : ValueEventListener {
@@ -128,7 +130,7 @@ fun GameScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(180.dp),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(32.dp),
             colors = CardDefaults.cardColors(containerColor = containerColor.copy(alpha = 0.9f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
@@ -139,13 +141,18 @@ fun GameScreen(
                 if (isRevealed) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Tvoja riječ:", color = textColor.copy(alpha = 0.6f), fontSize = 14.sp)
-                        Text(word, color = textColor, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
+                        Text(word, color = textColor, fontSize = 42.sp, fontWeight = FontWeight.ExtraBold)
                     }
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Visibility, contentDescription = null, tint = PurpleGradient)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Dodirni za otkrivanje", color = textColor.copy(alpha = 0.5f), fontWeight = FontWeight.Bold)
+                        Icon(
+                            imageVector = Icons.Default.Visibility, 
+                            tint = PurpleGradient,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text("DODIRNI ZA OTKRIVANJE", color = textColor.copy(alpha = 0.5f), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
             }
@@ -160,7 +167,7 @@ fun GameScreen(
             colors = CardDefaults.cardColors(containerColor = containerColor.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text("Chat", fontWeight = FontWeight.Bold, color = BlueGradient)
+                Text("Chat", fontWeight = FontWeight.Bold, color = BlueGradient, fontSize = 18.sp)
                 LazyColumn(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     state = listState,
@@ -172,16 +179,28 @@ fun GameScreen(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             horizontalAlignment = if (isMe) Alignment.End else Alignment.Start
                         ) {
-                            Text(msg.sender, fontSize = 10.sp, color = textColor.copy(alpha = 0.5f))
+                            if (!isMe) {
+                                Text(
+                                    msg.sender, 
+                                    fontSize = 11.sp, 
+                                    color = textColor.copy(alpha = 0.5f),
+                                    modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
+                                )
+                            }
                             Surface(
-                                color = if (isMe) BlueGradient else textColor.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(12.dp)
+                                color = if (isMe) BlueGradient else (if (isDarkTheme) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.05f)),
+                                shape = RoundedCornerShape(
+                                    topStart = 16.dp, 
+                                    topEnd = 16.dp, 
+                                    bottomStart = if (isMe) 16.dp else 4.dp, 
+                                    bottomEnd = if (isMe) 4.dp else 16.dp
+                                )
                             ) {
                                 Text(
                                     msg.message,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                                     color = if (isMe) Color.White else textColor,
-                                    fontSize = 14.sp
+                                    fontSize = 15.sp
                                 )
                             }
                         }
@@ -189,7 +208,7 @@ fun GameScreen(
                 }
                 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextField(
@@ -198,29 +217,33 @@ fun GameScreen(
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Napiši nešto...", fontSize = 14.sp) },
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
+                            focusedContainerColor = textColor.copy(alpha = 0.05f),
+                            unfocusedContainerColor = textColor.copy(alpha = 0.05f),
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
-                        maxLines = 2
+                        maxLines = 2,
+                        shape = RoundedCornerShape(24.dp)
                     )
+                    Spacer(Modifier.width(8.dp))
                     IconButton(
                         onClick = {
-                            if (chatInput.isNotBlank()) {
-                                val newMessage = ChatMessage(sender = username, message = chatInput)
+                            val trimmedMessage = chatInput.trim()
+                            if (trimmedMessage.isNotBlank()) {
+                                val newMessage = ChatMessage(sender = username, message = trimmedMessage)
                                 database.child("chatMessages").push().setValue(newMessage)
                                 chatInput = ""
                             }
-                        }
+                        },
+                        modifier = Modifier.background(BlueGradient, CircleShape).size(48.dp)
                     ) {
-                        Icon(Icons.Default.Send, contentDescription = "Pošalji", tint = BlueGradient)
+                        Icon(Icons.Default.Send, contentDescription = "Pošalji", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Kontrole
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -230,9 +253,9 @@ fun GameScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(PurpleGradient)
+                        .height(60.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(creamyWhite) // Krem bijela pozadina
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
@@ -248,7 +271,7 @@ fun GameScreen(
                                             delay(10)
                                         }
                                         database.child("status").setValue("waiting")
-                                        database.child("chatMessages").removeValue() // Očisti chat za novu rundu
+                                        database.child("chatMessages").removeValue()
                                         holdProgress = 0f
                                     }
                                     try { awaitRelease() } finally { holdJob?.cancel(); holdProgress = 0f }
@@ -257,10 +280,22 @@ fun GameScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
+                    // Progress fill (prikazuje se samo dok se drži)
+                    if (holdProgress > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(holdProgress / 2f)
+                                .fillMaxHeight()
+                                .background(Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient)))
+                                .align(Alignment.CenterStart)
+                        )
+                    }
+
                     Text(
-                        text = if (holdProgress > 0f) String.format(Locale.US, "%.2fs", holdProgress) else "PONOVI IGRU",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
+                        text = if (holdProgress > 0f) String.format(Locale.US, "%.1fs", 2f - holdProgress) else "PONOVI IGRU",
+                        color = if (holdProgress > 1f) Color.White else Color(0xFF2D2D2D), // Tamni tekst na krem pozadini, bijeli na progresu
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 18.sp
                     )
                 }
             }
@@ -269,11 +304,12 @@ fun GameScreen(
 
             Button(
                 onClick = { FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onNewGame) },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f))
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f)),
+                contentPadding = PaddingValues()
             ) {
-                Text("IZAĐI IZ SOBE", color = textColor, fontWeight = FontWeight.Bold)
+                Text("IZAĐI IZ SOBE", color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
             }
         }
     }

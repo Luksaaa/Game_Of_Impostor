@@ -46,7 +46,12 @@ object WordManager {
                 }.mapNotNull { line ->
                     val parts = line.split("/")
                     if (parts.size >= 2) {
-                        parts[0].trim() to parts[1].trim()
+                        // Čišćenje razmaka na početku i kraju svake riječi
+                        val first = parts[0].trim()
+                        val second = parts[1].trim()
+                        if (first.isNotBlank() && second.isNotBlank()) {
+                            first to second
+                        } else null
                     } else null
                 }.toList()
             }

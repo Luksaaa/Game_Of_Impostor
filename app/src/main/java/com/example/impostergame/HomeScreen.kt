@@ -33,10 +33,9 @@ fun HomeScreen(username: String, onCreateRoom: () -> Unit, onJoinRoom: () -> Uni
 
     var showRules by remember { mutableStateOf(false) }
 
-    // Glavni Box koji drži cijeli ekran
     Box(modifier = Modifier.fillMaxSize()) {
         
-        // Sadržaj ekrana (Buttons)
+        // Sadržaj ekrana
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -84,7 +83,7 @@ fun HomeScreen(username: String, onCreateRoom: () -> Unit, onJoinRoom: () -> Uni
             Spacer(modifier = Modifier.height(screenHeight * 0.05f))
         }
 
-        // INFO GUMB - Postavljen izvan Column-a da bi uvijek bio na vrhu
+        // INFO GUMB
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -188,16 +187,32 @@ fun AestheticButton(text: String, subText: String, icon: ImageVector, onClick: (
         colors = ButtonDefaults.buttonColors(
             containerColor = color.copy(alpha = if (isDarkTheme) 0.15f else 0.9f),
             contentColor = if (isDarkTheme) color else Color.White
-        )
+        ),
+        contentPadding = PaddingValues(0.dp) // Uklanjamo defaultni padding gumba
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Surface(modifier = Modifier.size(48.dp), shape = RoundedCornerShape(14.dp), color = Color.White.copy(alpha = 0.2f)) {
-                Box(contentAlignment = Alignment.Center) { Icon(icon, null, modifier = Modifier.size(24.dp)) }
+        // Koristimo Row s fiksnim paddingom da bi ikone bile savršeno poravnate s lijeve strane
+        Row(
+            verticalAlignment = Alignment.CenterVertically, 
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(48.dp), 
+                shape = RoundedCornerShape(14.dp), 
+                color = if (isDarkTheme) color.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.2f)
+            ) {
+                Box(contentAlignment = Alignment.Center) { 
+                    Icon(icon, null, modifier = Modifier.size(24.dp)) 
+                }
             }
             Spacer(Modifier.width(16.dp))
             Column {
                 Text(text.uppercase(), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-                Text(subText, fontSize = 12.sp, color = (if (isDarkTheme) color else Color.White).copy(alpha = 0.7f))
+                Text(
+                    text = subText, 
+                    fontSize = 12.sp, 
+                    color = (if (isDarkTheme) color else Color.White).copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }

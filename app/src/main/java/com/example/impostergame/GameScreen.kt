@@ -15,7 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -75,7 +75,11 @@ fun GameScreen(
     val isDarkTheme = isSystemInDarkTheme()
     val textColor = if (isDarkTheme) Color.White else Color.Black
     val containerColor = if (isDarkTheme) DarkInputGray else Color.White
-    val creamyWhite = Color(0xFFFDF5E6) // Krem bijela (Old Lace)
+    
+    // Adaptivne krem boje
+    val repeatButtonBg = if (isDarkTheme) Color(0xFF3E3A33) else Color(0xFFFDF5E6)
+    val repeatButtonProgress = if (isDarkTheme) Color(0xFF5D564B) else Color(0xFFF5DEB3)
+    val repeatButtonText = if (isDarkTheme) Color(0xFFFDF5E6) else Color(0xFF2D2D2D)
 
     DisposableEffect(roomCode) {
         val listener = object : ValueEventListener {
@@ -217,8 +221,8 @@ fun GameScreen(
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Napiši nešto...", fontSize = 14.sp) },
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = textColor.copy(alpha = 0.05f),
-                            unfocusedContainerColor = textColor.copy(alpha = 0.05f),
+                            focusedContainerColor = if (isDarkTheme) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f),
+                            unfocusedContainerColor = if (isDarkTheme) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f),
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
@@ -237,7 +241,12 @@ fun GameScreen(
                         },
                         modifier = Modifier.background(BlueGradient, CircleShape).size(48.dp)
                     ) {
-                        Icon(Icons.Default.Send, contentDescription = "Pošalji", tint = Color.White, modifier = Modifier.size(20.dp))
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send, 
+                            contentDescription = "Pošalji", 
+                            tint = Color.White, 
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }
@@ -255,7 +264,7 @@ fun GameScreen(
                         .fillMaxWidth()
                         .height(60.dp)
                         .clip(RoundedCornerShape(20.dp))
-                        .background(creamyWhite) // Krem bijela pozadina
+                        .background(repeatButtonBg) // Adaptivna krem pozadina
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
@@ -280,20 +289,20 @@ fun GameScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    // Progress fill (prikazuje se samo dok se drži)
+                    // Adaptivni krem progress fill
                     if (holdProgress > 0f) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(holdProgress / 2f)
                                 .fillMaxHeight()
-                                .background(Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient)))
+                                .background(repeatButtonProgress)
                                 .align(Alignment.CenterStart)
                         )
                     }
 
                     Text(
                         text = if (holdProgress > 0f) String.format(Locale.US, "%.1fs", 2f - holdProgress) else "PONOVI IGRU",
-                        color = if (holdProgress > 1f) Color.White else Color(0xFF2D2D2D), // Tamni tekst na krem pozadini, bijeli na progresu
+                        color = repeatButtonText,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp
                     )

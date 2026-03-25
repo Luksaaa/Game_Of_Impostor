@@ -36,9 +36,17 @@ fun LobbyScreen(
     onLeaveRoom: () -> Unit,
     onGameStarted: () -> Unit
 ) {
+    val isDarkTheme = isSystemInDarkTheme()
+    val textColor = if (isDarkTheme) Color.White else Color.Black
+    val containerColor = if (isDarkTheme) DarkInputGray else Color.White
+    
+    // Adaptivne krem boje
+    val primaryBtnBg = if (isDarkTheme) Color(0xFF3E3A33) else Color(0xFFFDF5E6)
+    val primaryBtnText = if (isDarkTheme) Color(0xFFFDF5E6) else Color(0xFF2D2D2D)
+
     if (roomCode.isBlank()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = BlueGradient)
+            CircularProgressIndicator(color = primaryBtnBg)
         }
         return
     }
@@ -55,10 +63,6 @@ fun LobbyScreen(
     
     val isUserAdmin = currentAdmin == username
     
-    val isDarkTheme = isSystemInDarkTheme()
-    val textColor = if (isDarkTheme) Color.White else Color.Black
-    val containerColor = if (isDarkTheme) DarkInputGray else Color.White
-
     val clipboardManager = LocalClipboardManager.current
 
     val deepLinkUrl = "impostergame://join?code=$roomCode"
@@ -119,7 +123,7 @@ fun LobbyScreen(
                         text = "SOBA: $roomCode", 
                         fontSize = 32.sp, 
                         fontWeight = FontWeight.ExtraBold,
-                        color = BlueGradient
+                        color = textColor
                     )
                     Text(
                         text = "(Klikni za kopiranje)",
@@ -171,7 +175,7 @@ fun LobbyScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Igrači", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
-                        Text("$playerCount / 8", color = BlueGradient, fontWeight = FontWeight.Bold)
+                        Text("$playerCount / 8", color = primaryBtnBg, fontWeight = FontWeight.Bold)
                     }
                     
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = textColor.copy(alpha = 0.1f))
@@ -220,33 +224,23 @@ fun LobbyScreen(
                                 }
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().height(60.dp), // Ujednačena visina
+                        modifier = Modifier.fillMaxWidth().height(60.dp),
                         shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        contentPadding = PaddingValues(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (playerCount >= 2) primaryBtnBg else Color.Gray,
+                            contentColor = primaryBtnText
+                        ),
                         enabled = playerCount >= 2
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    brush = if (playerCount >= 2) Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient))
-                                            else Brush.horizontalGradient(listOf(Color.Gray, Color.Gray)),
-                                    shape = RoundedCornerShape(20.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (playerCount < 2) "MIN 2 IGRAČA" else "POKRENI IGRU",
-                                color = Color.White,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Text(
+                            text = if (playerCount < 2) "MIN 2 IGRAČA" else "POKRENI IGRU",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 } else {
                     Card(
-                        modifier = Modifier.fillMaxWidth().height(60.dp), // Ujednačena visina
+                        modifier = Modifier.fillMaxWidth().height(60.dp),
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(containerColor = Gold.copy(alpha = 0.1f))
                     ) {
@@ -268,7 +262,7 @@ fun LobbyScreen(
                     onClick = {
                         FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onLeaveRoom)
                     },
-                    modifier = Modifier.fillMaxWidth().height(60.dp), // Ujednačena visina
+                    modifier = Modifier.fillMaxWidth().height(60.dp),
                     shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.1f))
                 ) {

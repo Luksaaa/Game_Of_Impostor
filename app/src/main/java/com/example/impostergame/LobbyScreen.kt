@@ -175,7 +175,7 @@ fun LobbyScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Igrači", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
-                        Text("$playerCount / 8", color = primaryBtnBg, fontWeight = FontWeight.Bold)
+                        Text("$playerCount / 16", color = primaryBtnBg, fontWeight = FontWeight.Bold)
                     }
                     
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = textColor.copy(alpha = 0.1f))

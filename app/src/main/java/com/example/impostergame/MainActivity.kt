@@ -243,7 +243,7 @@ private fun joinRoomLogic(
             val playersSnapshot = snapshot.child("players")
             if (playersSnapshot.hasChild(username)) {
                 onSuccess()
-            } else if (playersSnapshot.childrenCount < 8) {
+            } else if (playersSnapshot.childrenCount < 16) {
                 database.child(code).child("players").child(username).setValue(mapOf("name" to username, "isReady" to false)).addOnSuccessListener {
                     database.child(code).child("messages").push().setValue("$username je ušao")
                     onSuccess()

@@ -8,7 +8,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -62,6 +61,7 @@ fun GameScreen(
     var word by remember { mutableStateOf("") }
     var isRevealed by remember { mutableStateOf(false) }
     var holdProgress by remember { mutableFloatStateOf(0f) }
+    var exitHoldProgress by remember { mutableFloatStateOf(0f) }
     var currentAdmin by remember { mutableStateOf("") }
     var chatMessages by remember { mutableStateOf(listOf<ChatMessage>()) }
     var chatInput by remember { mutableStateOf("") }
@@ -80,14 +80,15 @@ fun GameScreen(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     var holdJob by remember { mutableStateOf<Job?>(null) }
+    var exitHoldJob by remember { mutableStateOf<Job?>(null) }
 
     val isDarkTheme = isSystemInDarkTheme()
     val textColor = if (isDarkTheme) OffWhite else DeepCharcoal
     val containerColor = if (isDarkTheme) DarkInputGray else Color.White
     val accentColor = SageGreen
     
-    val repeatButtonBg = if (isDarkTheme) Color(0xFF3E3A33) else Color(0xFFFDF5E6)
-    val repeatButtonProgress = if (isDarkTheme) SageGreen.copy(alpha = 0.3f) else SageGreen.copy(alpha = 0.2f)
+    val secondaryBtnBg = if (isDarkTheme) Color(0xFF3E3A33) else Color(0xFFFDF5E6)
+    val progressColor = SageGreen.copy(alpha = 0.3f)
 
     DisposableEffect(roomCode) {
         val listener = object : ValueEventListener {
@@ -109,9 +110,9 @@ fun GameScreen(
                 }
                 chatMessages = chatList
                 val playersMap = mutableMapOf<String, PlayerInfo>()
-                snapshot.child("players").children.forEach {
-                    val pInfo = it.getValue(PlayerInfo::class.java)
-                    if (pInfo != null && it.key != null) playersMap[it.key!!] = pInfo
+                snapshot.child("players").children.forEach { playerSnapshot ->
+                    val pInfo = playerSnapshot.getValue(PlayerInfo::class.java)
+                    if (pInfo != null && playerSnapshot.key != null) playersMap[playerSnapshot.key!!] = pInfo
                 }
                 players = playersMap
                 isDiscussionActive = snapshot.child("isDiscussionActive").getValue(Boolean::class.java) ?: false
@@ -175,7 +176,6 @@ fun GameScreen(
 
     if (showVoteDialog) {
         Dialog(onDismissRequest = { showVoteDialog = false }) {
-            val playerList = remember(players) { players.keys.toList() }
             Card(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                 shape = RoundedCornerShape(28.dp),
@@ -186,7 +186,8 @@ fun GameScreen(
                     Text("TKO JE IMPOSTER?", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MutedRose)
                     Spacer(Modifier.height(16.dp))
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(playerList) { pId ->
+                        val playerList = players.keys.toList()
+                        itemsIndexed(playerList) { _, pId ->
                             val playerName = players[pId]?.name ?: pId
                             Surface(
                                 onClick = {
@@ -203,7 +204,7 @@ fun GameScreen(
                             ) {
                                 Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Box(modifier = Modifier.size(32.dp).background(accentColor.copy(0.2f), CircleShape), contentAlignment = Alignment.Center) {
-                                        Text(playerName.firstOrNull()?.toString()?.uppercase() ?: "?", fontWeight = FontWeight.Bold, color = accentColor, fontSize = 14.sp)
+                                        Text(playerName.firstOrNull()?.toString()?.uppercase(Locale.ROOT) ?: "?", fontWeight = FontWeight.Bold, color = accentColor, fontSize = 14.sp)
                                     }
                                     Spacer(Modifier.width(12.dp))
                                     Text(playerName, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = textColor)
@@ -282,22 +283,24 @@ fun GameScreen(
                 LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(vertical = 8.dp)) {
                     itemsIndexed(chatMessages) { index, msg ->
                         val isMe = msg.sender == username
-                        val prevMsg = if (index > 0) chatMessages[index - 1] else null
-                        val isNewGroup = prevMsg == null || prevMsg.sender != msg.sender
-                        
-                        val showName = !isMe && isNewGroup
+                        val isNewGroup = index == 0 || chatMessages[index - 1].sender != msg.sender
                         val verticalPadding = if (isNewGroup) 6.dp else 2.dp
 
                         Column(modifier = Modifier.fillMaxWidth().padding(vertical = verticalPadding), horizontalAlignment = if (isMe) Alignment.End else Alignment.Start) {
-                            if (showName) {
-                                Text(msg.sender, fontSize = 11.sp, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+                            if (isNewGroup) {
+                                Text(
+                                    text = if (isMe) "$username" else msg.sender,
+                                    fontSize = 11.sp, 
+                                    color = textColor.copy(alpha = 0.5f), 
+                                    modifier = Modifier.padding(start = if(isMe) 0.dp else 4.dp, end = if(isMe) 4.dp else 0.dp, bottom = 2.dp)
+                                )
                             }
                             Surface(
                                 color = if (isMe) accentColor.copy(alpha = if(isDarkTheme) 0.25f else 0.85f) 
                                         else (if (isDarkTheme) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.05f)), 
                                 shape = RoundedCornerShape(
-                                    topStart = if (showName || isMe) 16.dp else 4.dp, 
-                                    topEnd = 16.dp, 
+                                    topStart = if (isNewGroup || isMe) 16.dp else 4.dp, 
+                                    topEnd = if (isNewGroup || !isMe) 16.dp else 4.dp, 
                                     bottomStart = if (isMe) 16.dp else 4.dp, 
                                     bottomEnd = if (isMe) 4.dp else 16.dp
                                 ), 
@@ -333,10 +336,10 @@ fun GameScreen(
                                 try { awaitRelease() } finally { holdJob?.cancel(); holdProgress = 0f }
                             })
                         },
-                    color = repeatButtonBg
+                    color = secondaryBtnBg
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        if (holdProgress > 0f) Box(modifier = Modifier.fillMaxWidth(holdProgress / 2f).fillMaxHeight().background(accentColor.copy(0.2f)).align(Alignment.CenterStart))
+                        if (holdProgress > 0f) Box(modifier = Modifier.fillMaxWidth(holdProgress / 2f).fillMaxHeight().background(progressColor).align(Alignment.CenterStart))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Refresh, null, tint = textColor.copy(0.6f), modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
@@ -359,11 +362,30 @@ fun GameScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        Button(
-            onClick = { FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onNewGame) }, 
-            modifier = Modifier.fillMaxWidth().height(50.dp), 
-            shape = RoundedCornerShape(16.dp), 
-            colors = ButtonDefaults.buttonColors(containerColor = textColor.copy(alpha = 0.05f))
-        ) { Text("IZAĐI IZ SOBE", color = textColor.copy(alpha = 0.5f), fontWeight = FontWeight.Bold, fontSize = 14.sp) }
+        Surface(
+            modifier = Modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(16.dp))
+                .pointerInput(Unit) {
+                    detectTapGestures(onPress = {
+                        exitHoldJob = scope.launch {
+                            val start = System.currentTimeMillis()
+                            while (exitHoldProgress < 2f) { exitHoldProgress = ((System.currentTimeMillis() - start) / 1000f).coerceAtMost(2f); delay(10) }
+                            FirebaseManager.leaveRoomWithAdminTransfer(roomCode, username, onNewGame)
+                            exitHoldProgress = 0f
+                        }
+                        try { awaitRelease() } finally { exitHoldJob?.cancel(); exitHoldProgress = 0f }
+                    })
+                },
+            color = textColor.copy(alpha = 0.05f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                if (exitHoldProgress > 0f) Box(modifier = Modifier.fillMaxWidth(exitHoldProgress / 2f).fillMaxHeight().background(MutedRose.copy(0.2f)).align(Alignment.CenterStart))
+                Text(
+                    text = if (exitHoldProgress > 0f) String.format(Locale.US, "IZAĐI ZA %.1fs", 2f - exitHoldProgress) else "IZAĐI IZ SOBE", 
+                    color = textColor.copy(alpha = 0.5f), 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 14.sp
+                )
+            }
+        }
     }
 }

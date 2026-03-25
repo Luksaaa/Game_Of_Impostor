@@ -10,21 +10,6 @@ enum class Screen {
     GAME
 }
 
-data class Room(
-    val admin: String = "",
-    val status: String = "waiting", // waiting, started, finished
-    val players: Map<String, PlayerInfo> = emptyMap(),
-    val mainWord: String = "",
-    val imposterWord: String = "",
-    val imposterId: String = "",
-    val messages: List<String> = emptyList(),
-    val chatMessages: List<ChatMessage> = emptyList(),
-    val discussionEndTime: Long = 0L,
-    val isDiscussionActive: Boolean = false,
-    val votedPlayerId: String = "",
-    val resultMessage: String = ""
-)
-
 data class PlayerInfo(
     val name: String = "",
     val isReady: Boolean = false
@@ -59,7 +44,7 @@ object WordManager {
                     } else null
                 }.toList()
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Fallback ako dođe do greške
             wordPairs = listOf(
                 "Jabuka" to "Kruška",
@@ -79,7 +64,4 @@ object WordManager {
             pair.second to pair.first
         }
     }
-
-    fun getRandomWord(): String = getNextWords().first
-    fun getRandomImposterWord(exclude: String): String = "Kruška"
 }

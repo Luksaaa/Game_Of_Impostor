@@ -1,6 +1,5 @@
 package com.example.impostergame
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -11,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -26,7 +24,7 @@ fun EnterNameScreen(onNameEntered: (String, Boolean) -> Unit) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
     val isDarkTheme = isSystemInDarkTheme()
-    val textColor = if (isDarkTheme) Color.White else Color.Black
+    val textColor = if (isDarkTheme) OffWhite else DeepCharcoal
     val inputContainerColor = if (isDarkTheme) DarkInputGray else Color.White
 
     val configuration = LocalConfiguration.current
@@ -46,14 +44,13 @@ fun EnterNameScreen(onNameEntered: (String, Boolean) -> Unit) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Flexible spacing based on screen height
             Spacer(modifier = Modifier.height(screenHeight * 0.05f))
 
             Text(
                 text = "IMPOSTOR GAME",
                 fontSize = 36.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = BlueGradient,
+                color = SageGreen,
                 letterSpacing = 4.sp
             )
             
@@ -98,18 +95,18 @@ fun EnterNameScreen(onNameEntered: (String, Boolean) -> Unit) {
                         shape = RoundedCornerShape(12.dp),
                         isError = errorMessage != null,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = BlueGradient,
+                            focusedBorderColor = SageGreen,
                             unfocusedBorderColor = textColor.copy(alpha = 0.2f),
                             focusedTextColor = textColor,
                             unfocusedTextColor = textColor,
-                            errorBorderColor = Color.Red
+                            errorBorderColor = MutedRose
                         )
                     )
 
                     if (errorMessage != null) {
                         Text(
                             text = errorMessage!!,
-                            color = Color.Red,
+                            color = MutedRose,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 4.dp).align(Alignment.Start)
                         )
@@ -124,7 +121,7 @@ fun EnterNameScreen(onNameEntered: (String, Boolean) -> Unit) {
                         Checkbox(
                             checked = rememberMe,
                             onCheckedChange = { rememberMe = it },
-                            colors = CheckboxDefaults.colors(checkedColor = BlueGradient)
+                            colors = CheckboxDefaults.colors(checkedColor = SageGreen)
                         )
                         Text(
                             text = "Zapamti me",
@@ -149,20 +146,12 @@ fun EnterNameScreen(onNameEntered: (String, Boolean) -> Unit) {
                             .fillMaxWidth()
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        contentPadding = PaddingValues()
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SageGreen,
+                            contentColor = Color.White
+                        )
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    brush = Brush.horizontalGradient(listOf(BlueGradient, PurpleGradient)),
-                                    shape = RoundedCornerShape(16.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("KRENI", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        }
+                        Text("KRENI", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
                 }
             }

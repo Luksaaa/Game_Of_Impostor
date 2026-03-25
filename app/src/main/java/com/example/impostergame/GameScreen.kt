@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -153,7 +154,8 @@ fun GameScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("KRAJ RUNDE", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = if (resultMessage.contains("🏆")) accentColor else MutedRose)
+                    val color = if (resultMessage.contains("🏆")) accentColor else MutedRose
+                    Text("KRAJ RUNDE", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = color)
                     Spacer(Modifier.height(16.dp))
                     Text(resultMessage, textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = textColor, lineHeight = 28.sp)
                     Spacer(Modifier.height(24.dp))
@@ -187,7 +189,7 @@ fun GameScreen(
                     Spacer(Modifier.height(16.dp))
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         val playerList = players.keys.toList()
-                        itemsIndexed(playerList) { _, pId ->
+                        items(playerList) { pId ->
                             val playerName = players[pId]?.name ?: pId
                             Surface(
                                 onClick = {
@@ -272,7 +274,7 @@ fun GameScreen(
                             DropdownMenu(expanded = showTimerMenu, onDismissRequest = { showTimerMenu = false }) {
                                 listOf(30, 45, 60).forEach { sec ->
                                     DropdownMenuItem(text = { Text("$sec sekundi") }, onClick = {
-                                        database.updateChildren(mapOf("isDiscussionActive" to true, "discussionEndTime" to System.currentTimeMillis() + (sec * 1000)))
+                                        database.updateChildren(mapOf("isDiscussionActive" to true, "discussionEndTime" to System.currentTimeMillis() + (sec * 1000L)))
                                         showTimerMenu = false
                                     })
                                 }
@@ -289,7 +291,7 @@ fun GameScreen(
                         Column(modifier = Modifier.fillMaxWidth().padding(vertical = verticalPadding), horizontalAlignment = if (isMe) Alignment.End else Alignment.Start) {
                             if (isNewGroup) {
                                 Text(
-                                    text = if (isMe) "$username" else msg.sender,
+                                    text = msg.sender,
                                     fontSize = 11.sp, 
                                     color = textColor.copy(alpha = 0.5f), 
                                     modifier = Modifier.padding(start = if(isMe) 0.dp else 4.dp, end = if(isMe) 4.dp else 0.dp, bottom = 2.dp)

@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
         // Učitavamo riječi iz txt rječnika
         WordManager.loadWords(this)
         
-        val sharedPref = getSharedPreferences("ImposterGamePrefs", Context.MODE_PRIVATE)
+        val sharedPref = getSharedPreferences("ImposterGamePrefs", MODE_PRIVATE)
         val savedUsername = sharedPref.getString("username", "") ?: ""
         val savedRoomCode = sharedPref.getString("persistentRoomCode", "") ?: ""
         val savedIsAdmin = sharedPref.getBoolean("persistentIsAdmin", false)
@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // Ako imamo QR kod, on ima prednost nad spremljenom sobom
-        val initialRoomCode = if (qrRoomCode.isNotBlank()) qrRoomCode else savedRoomCode
+        val initialRoomCode = qrRoomCode.ifBlank { savedRoomCode }
 
         enableEdgeToEdge()
         setContent {

@@ -33,9 +33,6 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
     val textColor = if (isDarkTheme) OffWhite else DeepCharcoal
     val inputContainerColor = if (isDarkTheme) DarkInputGray else Color.White
     
-    // Adaptivne krem boje za gumb (kao na ostalim ekranima)
-    val joinBtnBg = if (isDarkTheme) Color(0xFF3E3A33) else Color(0xFFFDF5E6)
-    val joinBtnText = if (isDarkTheme) Color(0xFFFDF5E6) else Color(0xFF2D2D2D)
     val accentColor = MutedRose
 
     val context = LocalContext.current
@@ -157,7 +154,7 @@ fun JoinRoomScreen(username: String, onJoined: (String) -> Unit, onBack: () -> U
                             try {
                                 val intent = Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
                                 context.startActivity(intent)
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 Toast.makeText(context, "Ne mogu otvoriti kameru", Toast.LENGTH_SHORT).show()
                             }
                         },

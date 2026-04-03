@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.impostergame"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.impostergame"

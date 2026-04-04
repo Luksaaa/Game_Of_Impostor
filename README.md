@@ -45,5 +45,3 @@ The game supports between 2 and 16 players per session. Upon initiation, the sys
 4.  Configure Firebase Realtime Database security rules to allow appropriate read/write permissions.
 5.  Build and deploy via Android Studio.
 
----
-© 2024 Game of Impostor Development Team.

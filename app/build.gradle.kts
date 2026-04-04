@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -27,9 +28,18 @@ android {
             )
         }
     }
+    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    // Ispravna moderna metoda za Kotlin 2.0+ unutar android bloka
+    @Suppress("UnstableApiUsage")
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
     }
 
     buildFeatures {
@@ -38,7 +48,7 @@ android {
 }
 
 dependencies {
-    // Firebase BoM (Bill of Materials)
+    // Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-database-ktx")
@@ -55,7 +65,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.material.icons.extended)
 
-    // ZXing for QR Code generation
+    // Ostalo
     implementation(libs.zxing.core)
 
     // Testiranje

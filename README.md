@@ -45,3 +45,8 @@ The game supports between 2 and 16 players per session. Upon initiation, the sys
 4.  Configure Firebase Realtime Database security rules to allow appropriate read/write permissions.
 5.  Build and deploy via Android Studio.
 
+## License
+
+This project is for personal use and educational purposes.
+
+© 2026 Luka Lukšić. All rights reserved.
